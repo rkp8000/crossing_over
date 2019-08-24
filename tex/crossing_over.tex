@@ -114,6 +114,46 @@ It follows from property \ref{sec:prop-ind-c-states} that $s(X^Y, X^{Y'}) \sim \
 
 Another useful definition is $P(x^Y \leftarrow X^i)$, the probability that in constructing $X^Y$, the component $x^Y$ was copied from symbol code $X^i$. If this is true, then $x^Y = x^i$. Note that the converse is not true, however: even if $x^Y$ was taken from a symbol code $X^k \neq X^i$, then $x^Y$ could still equal $x^i$, since there is a chance $x^k = x^i = x^Y$. We define $P(x^Y \not \leftarrow X^i) = 1 - P(x^Y \leftarrow X^i)$.
 
+\subsection{Useful quantities}
+
+We first define and compute a few useful quantities that will simplify the rest of our calculations.
+
+1. $P(x^Y \leftarrow y_t)$ is the probability that $x^Y$ was taken from the $t$-th element of $Y$ times the probability it was not overwritten between $t+1$ and $L$, even by the same symbol or state. For notational convenience we call this $f^\gamma_t(x^Y)$. We then have:
+
+$$f^\gamma_t(x^Y) \equiv P(x^Y \leftarrow y_t) = \frac{1}{(t+1)^\gamma}\prod\limits_{t' = t+1}^L\left(1 - \frac{1}{(t'+1)^\gamma}\right).$$
+
+Note that $f^1_t(x^Y) = 1/(L+1)$. We leave the proof as an exercise for the reader.
+
+2. $P(x^Y \leftarrow i)$ is the probability that $x^Y$ was taken from symbol $i$, which will depend on how many times $i$ was present in $Y$. We compute this by summing the probabilities of all ways this could have occurred.
+
+Suppose $y_t = i$ for $t_1 < ... < t_{n^i}$, such that $\sum_i n^i = L$. There are $n^i$ cases in which $x^Y$ could have ended up being taken from $i$. First, it could have been taken from $y_{t_1}$ then never overwritten, which probability is $f^\gamma_{t_1}(x^Y)$. Next, it could have been taken from $y_{t_2}$ then never overwritten (regardless of whether it was taken from $y_{t_1}$), which probability is $f^\gamma_{t_2}(x^Y)$. And so forth until $t_{n^i}$. Note these $n^i$ cases are mutually non-overlapping and cover all possible ways that $x^Y$ could have been taken from $i$. Thus
+
+$$P(x^Y \leftarrow i) = f^\gamma_{t_1}(x^Y) + ... + f^\gamma_{t_{n^i}}(x^Y)$$.
+
+When $\gamma = 1$, we have $P(x^Y \leftarrow i) = n/(L+1)$.
+
+3. $P(x^Y \leftarrow Y_{1:t})$ is the probability that $x^Y = x^{Y_{1:t}}$, i.e. the probability it was not overwritten from $t+1$ to $L$. This is then
+
+$$P(x^Y \leftarrow Y_{1:t}) = \prod\limits_{t' = t+1}^L \left(1 - \frac{1}{(t'+1)^\gamma}\right).$$
+
+When $\gamma = 1$, then $P(x^Y \leftarrow Y_{1:t}) = (t+1)/(L+1)$.
+
+4. $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t})$ is the probability that $x^Y$ came from $i$ given that it did not come from $Y_{1:t}$ (i.e. given that it was overwritten at some point from $t+1$ to $L$). Suppose $y_s = i$ for $t < s_1 < ... < s_{n^i_{t+1:L}}$ where $n^i_{t+1:L}$ is the number of times symbol $i$ appears in $Y_{t+1:L} \equiv (y_{t+1}, ..., y_L)$, such that $\sum_i n^i_{t+1:L} = L-t$.
+
+We compute $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t})$ by summing over the probabilities of all the ways this could have occurred. Similar to the calculation for $P(x^Y \leftarrow i)$, we have
+
+$$P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = P(x^Y \leftarrow y_{s_1}| x^Y \not \leftarrow Y_{1:t}) + ... + P(x^Y \leftarrow y_{s_{n^i_{t+1:L}}}| x^Y \not \leftarrow Y_{1:t}).$$
+
+By Bayes' Rule:
+
+$$P(x^Y \leftarrow y_{s_k}| x^Y \not \leftarrow Y_{1:t}) = \frac{P(x^Y \not \leftarrow Y_{1:t}| x^Y \leftarrow y_{s_k})P(x^Y \leftarrow y_{s_k})}{P(x^Y \not\leftarrow Y_{1:t})} = \frac{P(x^Y \leftarrow y_{s_k})}{P(x^Y \not\leftarrow Y_{1:t})}$$
+
+since if $x^Y$ came from $y_{s_k}$, which is in the part of $Y$ after $t$, then $x^Y$ could have not have come from $Y_{1:t}$. We have already computed the numerator and denominator (which is just $1 - P(x^Y \leftarrow Y_{1:t}))$, so
+
+$$P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = \frac{1}{P(x^Y \not\leftarrow Y_{1:t})}\left( f^\gamma_{s_1}(x^Y) + ... + f^\gamma_{s_{n^i_{t+1:L}}}(x^Y) \right).$$
+
+When $\gamma = 1$ this reduces to $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = \frac{n^i_{t+1:L}}{L-t}$, i.e. when $\gamma = 1$ the probability that $x^Y$ was taken from any symbol $i$, given that it was taken from some symbol at time $s > t$ is just proportional to how many times $i$ appears in the second part of the sequence $Y_{t+1:L}$.
+
 \subsection{Similarity between start code and sequence code}
 \label{sec:sml-start-seq}
 
