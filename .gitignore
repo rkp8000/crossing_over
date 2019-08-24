@@ -3,6 +3,9 @@
 !*.md
 !*.ipynb
 !*.py
+!*.tex
+!*.sty
+!*.bib
 !*.gitignore
 !tex
 
