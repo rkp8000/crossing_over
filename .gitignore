@@ -3,8 +3,8 @@
 !*.md
 !*.ipynb
 !*.py
-!replay
 !*.gitignore
+!tex
 
 sandbox.ipynb
 
