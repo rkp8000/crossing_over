@@ -14,7 +14,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
 
-\title{A hyperdimensional crossover code for sequences and k-ary trees}
+\title{A hyperdimensional sequence code inspired by chromosomal crossover}
 
 \author{
   Rich ~Pang\thanks{https://rkp.science} \\
@@ -29,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-Hyperdimensional computing (HDC) is a distributed computing framework where information is represented by simple functions of high-dimensional vectors with i.i.d. random components. This confers several advantages, such as well separated, fixed-dimensional codes for composite objects like sequences, and robustness to noise. A key challenge is developing HDC codes that optimally preserve similarities among the objects they represent while simultaneously keeping their representations easily distinguishable. HDC codes for sequences, for instance, typically differ strongly from the codes for their elements (e.g. the code for AB is equidistant from those for A, B, and C) in order to retain order information. I present a novel HDC method that encodes sequences not via convolution, permutation, or matrix multiplication, which so far have driven the field, but via a simple operation analogous to chromosomal crossover; the resulting sequence vectors retain both recoverable order information and high similarity to the codes for their elements, thus better preserving desirable similarities. Crossover naturally generalizes to k-ary trees, suggesting general utility in the representation of arbitrary objects for general cognition. I derive several mathematical properties of crossover and discuss its relevance to artificial intelligence and computational neuroscience.
+I present a method for encoding structured information in fixed-length vectors. Drawing on ideas from high-dimensional (HD) computing, the presented scheme encodes elements of information as HD random vectors, and relationships among them (like sequences or trees) by (pseudo-)randomly weaving these vectors together via an operation analogous to chromosomal crossover. Unlike previous HD coding schemes, "crossover" codes retain low Hamming distance to the multi-level sub-relationships that comprise them--all the way down to their base elements--yet high distance to alternative elements or relationships. Accurate decoding can thus occur via greedy reconstruction of the representation. Unlike most machine-learning approaches, crossover (as in other HD computing schemes) requires no training, making it highly amenable to mathematical analysis. I derive several of its formal properties and discuss its relevance to neuroscience and artificial intelligence.
 \end{abstract}
 
 
@@ -38,17 +38,17 @@ Hyperdimensional computing (HDC) is a distributed computing framework where info
 
 
 \section{Introduction}
-\lipsum[2]
-\lipsum[3]
+A core problem in neuroscience is how the brain represents a complex event like a spoken sentence using relatively fixed dimensions. Ideally similar events should have similar representations, and when a new event occurs pre-existing representations shouldn't require substantial rearrangement to prevent confusion.
+
+One approach to solving this has been to assume representations are built from high-dimensional (HD) random vectors \ref{}. Such approach is fundamentally motivated by the observation that independent HD random vectors are very close to orthogonal (and far apart under other distance metrics) with very high probability. Thus, if one considers a codebook where $M$ objects are assigned to $M$ independently sampled HD random vectors, the codes are very unlikely to be confused. 
 
 
-\section{Methods}
 
-Consider a system $X$ of $N$ components $x_1, ..., x_N$, each of which can take any of $Z$ states. That is, $x_j \in G$ where $|G| = Z$. Label the states of $G$ as $1,...,Z$ for conciseness, and for clarity call these component states "c-states", to distinguish them from the overall system state.
+\section{Algorithm}
 
-Let the distance $d(X^A, X^B)$ between two states be their Hamming distance, scaled to range between 0 and 1, and their similarity $s(X^A, X^B) \equiv 1 - d(X^A, X^B)$. If $x_j$ are sampled uniformly and i.i.d from $G$, then $s(X^A, X^B) \sim \frac{1}{N} \textrm{Bi}(N, q)$, where $\textrm{Bi}(N, q)$ is a binomial distribution with success probability $q = 1/Z$. The mean similarity of two such system states is thus $E[s(X^A, X^B)] = 1/Z$.
+Consider a system $X$ of $N$ components $x_1, ..., x_N$, each of which can take any of $Z$ states. That is, $x_j \in G$ where $|G| = Z$. Label the states of $G$ as $1,...,Z$ for conciseness. Let $d(X^A, X^B)$ be the Hamming distance between $X^A$ and $X^B$, scaled to range from 0 and 1, and their similarity $s(X^A, X^B) \equiv 1 - d(X^A, X^B)$.
 
-We wish to establish a decodable mapping from arbitrary objects of cognition to system states, such that objects that are intuitively similar to us map to system states with high similarities. We shall start by considering sequences of symbols then generalize to arbitrary finite nested sets (or equivalently k-ary trees) with symbols as elements (leaves).
+We wish to establish a decodable mapping from arbitrary objects of cognition to system states, such that objects that are intuitively similar to us map to codes with high similarities. We shall start by considering sequences of symbols then generalize to arbitrary finite nested sets (or equivalently k-ary trees) with symbols as elements (leaves).
 
 \subsection{Algorithm}
 
@@ -56,49 +56,65 @@ Given a dictionary $D$ of $M$ symbols $s^1, ..., s^M$, we will first sample a "C
 
 \textbf{Setup}
 
-1. Sample a C-basis $B \equiv (X^1, ..., X^M, X^*)$, where each $X^i$ (encoding symbol $s^i$) has components $x^i_j$ sampled uniformly and i.i.d. from $G$, and where $X^*$ is "start" code, also comprised of uniform, i.i.d. components from $\Omega$.
+1. Sample a C-basis $B \equiv (X^1, ..., X^M, X^*)$, where each $X^i$ (encoding symbol $s^i$) has components $x^i_j$ sampled uniformly and i.i.d. from $G$, and where $X^*$ is "start" code, also comprised of uniform, i.i.d. components from $G$.
 
-2. Sample a "mask function" $\mu \sim P(\mu)$, where $\mu:(X^A, X^B) \rightarrow [0, 1]^N$ and is represented by a matrix with $Z^{2N}$ rows (indexed by $(X^A, X^B)$) and $N$ columns (indexed by $j$), with i.i.d. real-valued elements from $\textrm{Uniform}(0, 1)$.
+2. Sample a "mask function" $\mu \sim P(\mu)$, where $\mu:(X^A, X^B) \rightarrow [0, 1]^N$ and is represented by a matrix with $N$ rows and $Z^{2N}$ columns, with i.i.d. real-valued elements from $\textrm{Uniform}(0, 1)$. We reference elements of $\mu$ with the notation $\mu(j, X^A, X^B)$.
 
-In practice $\mu$ need not be sampled explicitly, which would take astronomical time; it suffices to use, say, a hash function like MD5 or SHA-1 to map $(X^A, X^B)$ to an integer, seed an RNG with this integer, then sample $N$ times from $\textrm{Uniform}(0, 1)$ using the seeded RNG. $\mu$ as defined above simply allows cleaner mathematical rigor.
+In practice $\mu$ need not be sampled explicitly, which would take astronomical time; it suffices to use, say, to map $(X^A, X^B)$ using a hash function like SHA-1 to an integer, then sample $N$ times from $\textrm{Uniform}(0, 1)$ from a random number generator seeded with this integer.
 
 \textbf{Encoding}
 
 ...
 
-\section{Key properties}
+\section{Properties}
 
-\subsection{Independence of component states}
-\label{sec:prop-ind-c-states}
-
-\textbf{Result:}
-
-$$P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y) = P(x^Y_j|Y)^N$$
-
-\textbf{Proof:}
-
-\subsection{Equivalence of c-states}
-\label{sec:prop-equiv-c-states}
+\subsection{Sequence codes have i.i.d. components}
+\label{sec:iid-comp}
 
 \textbf{Result:}
 
-$$P(x^Y_j = g|Y) = P(x^Y_j = g'|Y) = \frac{1}{Z}, \forall g, g' \in G.$$
+$$P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y) \quad \textrm{and} \quad P(x^Y_j|Y) = P(x^Y_{j'}|Y) \quad \forall j, j'$$
+
+??? A corollary is that if $Y \sim P(Y)$ then $P(x^Y_j) = P(x^Y_{j'}) \quad \forall j, j' \in [1, ..., N]^2$, and similarly $P(X^Y) $
 
 \textbf{Proof:}
 
-We will show that $P(x^Y_j = g|Y) = P(x^Y_j = g'|Y)$ for all $r \neq r'$. This implies $P(x^Y_j = g|Y) = 1/Z$ (since $g \in G$ and $|G| = Z$), which is not a function of Y.
+Denoting $Y_{1:t} \equiv (y_1, ..., y_t)$ with $Y_{1:L} = Y$, and $B_j \equiv (x^1_j, ..., x^M_j, x^*_j)$, we want to show that $x_j^{Y_{1:t}}$ are independent across $j$ for all $t$.
 
-As $x^Y_j$ can only depend on $\tilde{x} \equiv (x^1_j, ..., x^M_j, x^*_j)$, we can expand
+We will frequently use the fact that if $A_1, ..., A_N$ are independent, then so are $f(A_1), ..., f(A_N)$. In particular, we note that $x_j^{Y_{1:t}}$ is a strict function of $\xi^t_j \equiv \{x_j^{Y_{1:t-1}}, ..., x_j^{Y_{1:0}}, B_j, \mu(j, X^*, X^{y_1}), \mu(j, X^{Y_{1:1}}, X^{y_2}), ..., \mu(j, X^{Y_{1:t-1}}, X^{y_t})\}.$ Therefore if $\xi^t_j$ are independent across $j$, so are $x_j^{Y_{1:t}}$. Thus, it suffices to show $\xi^t_j$ are independent across $j$ for all $t$.
 
-$$P(x^Y_j = r|Y) = \sum\limits_{\tilde{x}} P(x^Y_j = r|\tilde{x}, Y)P(\tilde{x}|Y) = \frac{1}{Z^{M+1}}\sum\limits_{\tilde{x}} P(x^Y_j = r|\tilde{x}, Y).$$
+We proceed by induction:
 
-The sum comprises terms where either $g \in \tilde{x}$ or $g \notin \tilde{x}$. In the latter terms, $P(x^Y_j = g|\tilde{x}, Y) = 0$. Thus we only need to worry about the former terms where $g \in \tilde{x}$.
+\textbf{Base case:} $\xi^1_j = \{x^{Y_{1:0}}_j, B_j, \mu(j, X^{Y_{1:0}}, X^{y_1})\} = \{x^*_j, B_j, \mu(j, X^*, X^{y_1})\}$, which are all i.i.d., so $\xi^1_j$ are independent across $j$.
 
-The trick is now to realize that each of these remaining terms has exactly one partner in the equivalent expansion of $P(x^Y_j = g'|Y)$, with the $g$ and $g'$ c-states swapped. Thus, the expansion for both $P(x^Y_j = g|Y)$ and $P(x^Y_j = g'|Y)$ have exactly the same set of terms, so they must be equal. Therefore, $P(x^Y_j = g|Y) = 1/Z$. 
+\textbf{Inductive step:} If $\xi^t_j$ are independent across $j$ then so are $\{x_j^{Y_{1:t}}\} \cup \xi^t_j$, since this is just a function of $\xi^t_j$. Further, $\{x_j^{Y_{1:t}}\} \cup \xi^t_j \cup \{\mu(j, X^{Y_{1:t}}, X^{y_{t+1}})\}$ must also be independent across $j$. To see this, consider the following two cases.
 
-Thus, $P(X^Y|Y) = P(X^Y)$ so the distribution of sequence codes is independent of sequence length, or any sequence statistics for that matter, when marginalized over all possible crossover bases $B$. This distinguishes crossover from, say, binary encodings that grow sparser or denser with sequence length.
+First, most likely is that $\mu(j, X^{Y_{1:t}}, X^{y_{t+1}})$ has never been used in the construction of $X^{Y_{1:t-1}}$, so it is independent from $\{x_j^{Y_{1:t}}\} \cup \xi^t_j$ while also independent across $j$. Therefore, their union is independent across $j$.
 
-\subsection{Invariance of code statistics to sequence statistics}
+In the second, less likely case, $\mu(j, X^{Y_{1:t}}, X^{y_{t+1}})$ \textit{was} used to construct $X^{Y_{1:t-1}}$ at some point in the past, i.e. $(X^{Y_{1:t}}, X^{y_{t+1}}) = (X^{Y_{1:t'}}, X^{y_{t'+1}})$ for some $t' < t$. In this case, however, the term $\mu(j, X^{Y_{1:t}}, X^{y_{t+1}}) = \mu(j, X^{Y_{1:t'}}, X^{y_{t'+1}})$ is already included in $\xi^t_j$, and so the independence across $j$ is not affected because no new random variables are added. Thus, $\{x_j^{Y_{1:t}}\} \cup \xi^t_j \cup \{\mu(j, X^{Y_{1:t}}, X^{y_{t+1}})\}$ is independent across $j$.
+
+Since $\{x_j^{Y_{1:t}}\} \cup \xi^t_j \cup \{\mu(j, X^{Y_{1:t}}, X^{y_{t+1}})\} = \xi^{t+1}_j$, we have that $\xi^t_j$ being independent across $j$ implies that $\xi^{t+1}_j$ is independent across $j$, completing the inductive step.
+
+Therefore $x_j^{Y_{1:t}}$ is independent across $j$ for all $t$, in other words $P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y)$.
+
+The equality $P(x^Y_j|Y) = P(x^Y_{j'}|Y) \quad \forall j, j'$ arises because no component is treated differently from any other in our algorithm, so symmetry implies they can have no statistical differences.
+
+\subsection{Component distributions are uniform}
+\label{sec:prop-eqty-comp-dstr}
+
+\textbf{Result:}
+
+$$P(x^Y_j = g|Y) = P(x^Y_j = g'|Y) = \frac{1}{Z} \quad \forall g, g' \in G \quad \textrm{so} \quad P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y) = \frac{1}{Z^N}$$
+
+This implies neither $P(x^Y_j = g|Y)$ nor $P(X^Y|Y)$ are a function of $Y$. Thus, if $Y \sim P(Y)$ we then also have
+
+$$P(x_j) = \sum\limits_Y P(x^Y_j|Y)P(Y) = \frac{1}{Z} \quad \textrm{and} \quad P(X) = \sum\limits_Y P(X^Y|Y)P(Y) = \frac{1}{Z^N}.$$
+
+\textbf{Proof:}
+
+$P(x^Y_j = g|Y) = P(x^Y_j = g'|Y)$ for $g \neq g'$ arises because all $g$ in our model are treated identically, so symmetry implies any functions of them can have no statistical differences. Since these must add to $1$ when summed over $g \in G$, and $|G| = Z$, we must also have $P(x^Y_j = g|Y) = 1/Z.$
+
+\subsection{Code statistics are invariant to sequence statistics}
 
 \textbf{Result:}
 
@@ -106,43 +122,64 @@ $$P(X^Y|Y) \textrm{ does not depend on any statistic (e.g. length, symbol repeti
 
 \textbf{Proof:}
 
-This follows from \ref{sec:prop-ind-c-states} and \ref{sec:prop-equiv-c-states}.
+This follows from \ref{sec:prop-eqty-comp-dstr}, since $P(x^Y_j|Y) = 1/Z$. Therefore the statistics of crossover codes do not depend on any aspect about the sequence being encoded. This distinguishes crossover, for instance, from representations that grow more or less crowded with the complexity of the sequence they represent.
 
-\section{Similarity metrics}
+\subsection{Information about sequence identity is evenly distributed across the code}
+\label{sec:perf-info-dstr}
 
-It follows from property \ref{sec:prop-ind-c-states} that $s(X^Y, X^{Y'}) \sim \frac{1}{N}\textrm{Bi}(N, q)$, where $\textrm{Bi}(N, q)$ is a binomial distribution with success probability $q = P(x^Y_j = x^{Y'}_j)$. This because for a given code $X$ all components are independent, and code construction furthermore has no dependence on $j$. Thus, $\textrm{E}[s(X^Y, X^{Y'})] = q$ and $\textrm{Var}[s(X^Y, X^{Y'})] = q(1-q)/N$, and it suffices to only compute the probability that the $j$-th element (where $j$ is arbitrary) of $X^Y$ and $X^{Y'}$ is in the same c-state. For notational conciseness, we thus drop the $j$ and write $x \equiv x_j$.
+Given $B$, $\mu$, and a distribution over sequences $P_Y(Y)$ with entropy $H[Y]$, define the information $(I_j | B, \mu)$ in component $j$ as the mutual information between $Y$ and $x_j$, i.e.
 
-Another useful definition is $P(x^Y \leftarrow X^i)$, the probability that in constructing $X^Y$, the component $x^Y$ was copied from symbol code $X^i$. If this is true, then $x^Y = x^i$. Note that the converse is not true, however: even if $x^Y$ was taken from a symbol code $X^k \neq X^i$, then $x^Y$ could still equal $x^i$, since there is a chance $x^k = x^i = x^Y$. We define $P(x^Y \not \leftarrow X^i) = 1 - P(x^Y \leftarrow X^i)$.
+$$I_j | B, \mu \equiv MI[Y|x_j; B, \mu] = H[Y] - H[Y|x_j; B, \mu] = H[Y] - \sum_g H[Y|x_j = g; B, \mu] P_Y(x_j = g| B, \mu)$$
 
-\subsection{Useful quantities}
+\textbf{Result:}
+
+$$P(I_1, ..., I_N) = \prod_j P(I_j) \quad \textrm{and} \quad P(I_j) = P(I_{j'}) \quad \forall j, j'.$$
+
+In other words, each component contains independent and equal information about the sequence. (Note that this does not imply $I_j = I_{j'}$ for any given $B$ and $\mu$, since there are $B, \mu$ in which some $x_j$ are less informative about $Y$ than others, e.g. if some $x_j$ by chance has the same c-state for all $Y$.) This means that the code's robustness to random and targeted lesions are equivalent, depending only on how many components were damaged.
+
+\textbf{Proof:}
+
+This follows from \ref{sec:iid-comp}, since the components for one sequence $Y$ are i.i.d. Therefore, while the $x^Y_j$ and $x^{Y'}_j$ might be dependent (e.g. if $Y$ and $Y'$ are very similar; see below), there can be no dependencies between $x^Y_j$ and $x^{Y'}_{j'}$ for $j \neq j'$. Therefore $\{x^{Y_1}_j, ..., x^{Y_{N_Y}}_j\}$ is independent across $j$. Since $I_j$ is a function of $\{x^{Y_1}_j, ..., x^{Y_{N_Y}}_j\}$, $I_j$ is independent across $j$ also. Since no $j$ is treated specially in our algorithm, $I_j$ must also be identically distributed, so given $P(Y)$, $I_j$ is i.i.d.
+
+\subsection{Similarity between sequences}
+
+\textbf{Result:}
+
+
+
+Since $x^Y_j$ are i.i.d. across $j$ (\ref{sec:iid-comp}) it follows that $s(X^Y, X^{Y'}) \sim \frac{1}{N}\textrm{Bi}(N, q)$, where $\textrm{Bi}(N, q)$ is a binomial distribution with success probability $q = P(x^Y_j = x^{Y'}_j)$. Thus, $\textrm{E}[s(X^Y, X^{Y'})] = q$ and $\textrm{Var}[s(X^Y, X^{Y'})] = q(1-q)/N$, and it suffices to only compute $q$. For conciseness, we drop the $j$ and write $x \equiv x_j$ from now on.
+
+\textbf{Proof:}
+
+\textbf{Prelude:}
 
 We first define and compute a few useful quantities that will simplify the rest of our calculations.
 
-1. $P(x^Y \leftarrow y_t)$ is the probability that $x^Y$ was taken from the $t$-th element of $Y$ times the probability it was not overwritten between $t+1$ and $L$, even by the same symbol or state. For notational convenience we call this $f^\gamma_t(x^Y)$. We then have:
+1. $P(x^Y \leftarrow y_t)$ is the probability that $x^Y$ was taken from the $t$-th element of $Y$, that is, $1/(t+1)^\gamma$ times the probability it was not overwritten between $t+1$ and $L$ (including occasions where it was overwritten by the same state). For notational convenience we call this $f^{\gamma,L}_t$. We then have:
 
-$$f^\gamma_t(x^Y) \equiv P(x^Y \leftarrow y_t) = \frac{1}{(t+1)^\gamma}\prod\limits_{t' = t+1}^L\left(1 - \frac{1}{(t'+1)^\gamma}\right).$$
+$$f^{\gamma,L}_t \equiv P(x^Y \leftarrow y_t) = \frac{1}{(t+1)^\gamma}\prod\limits_{t' = t+1}^L\left(1 - \frac{1}{(t'+1)^\gamma}\right).$$
 
-Note that $f^1_t(x^Y) = 1/(L+1)$. We leave the proof as an exercise for the reader.
+Note that this is not a function of $x^Y$. Also note that $f^{1,L}_t = 1/(L+1)$, which is not a function of $t$.
 
 2. $P(x^Y \leftarrow i)$ is the probability that $x^Y$ was taken from symbol $i$, which will depend on how many times $i$ was present in $Y$. We compute this by summing the probabilities of all ways this could have occurred.
 
-Suppose $y_t = i$ for $t_1 < ... < t_{n^i}$, such that $\sum_i n^i = L$. There are $n^i$ cases in which $x^Y$ could have ended up being taken from $i$. First, it could have been taken from $y_{t_1}$ then never overwritten, which probability is $f^\gamma_{t_1}(x^Y)$. Next, it could have been taken from $y_{t_2}$ then never overwritten (regardless of whether it was taken from $y_{t_1}$), which probability is $f^\gamma_{t_2}(x^Y)$. And so forth until $t_{n^i}$. Note these $n^i$ cases are mutually non-overlapping and cover all possible ways that $x^Y$ could have been taken from $i$. Thus
+Suppose $y_t = i$ for $t_1 < ... < t_{n^i}$, with $\sum_i n^i = L$. We can divide the combinatorial ways $x^Y$ could have ended up being taken from $i$ into $n^i$ cases. First, $x^Y$ could have been taken from $y_{t_1}$ then never overwritten, whose probability is $f^{\gamma,L}_{t_1}$. Next, it could have been taken from $y_{t_2}$ then never overwritten (regardless of whether it was taken from $y_{t_1}$), whose probability is $f^{\gamma,L}_{t_2}$. And so forth until $t_{n^i}$. Note that these $n^i$ cases are mutually non-overlapping and cover all possible ways that $x^Y$ could have been taken from $i$. Thus
 
-$$P(x^Y \leftarrow i) = f^\gamma_{t_1}(x^Y) + ... + f^\gamma_{t_{n^i}}(x^Y)$$.
+$$P(x^Y \leftarrow i) = f^{\gamma,L}_{t_1} + ... + f^{\gamma,L}_{t_{n^i}}$$.
 
-When $\gamma = 1$, we have $P(x^Y \leftarrow i) = n/(L+1)$.
+When $\gamma = 1$, $P(x^Y \leftarrow i) = n/(L+1)$.
 
-3. $P(x^Y \leftarrow Y_{1:t})$ is the probability that $x^Y = x^{Y_{1:t}}$, i.e. the probability it was not overwritten from $t+1$ to $L$. This is then
+3. $P(x^Y \leftarrow Y_{1:t})$ is the probability that $x^Y$ was not overwritten from $t+1$ to $L$. This is just
 
-$$P(x^Y \leftarrow Y_{1:t}) = \prod\limits_{t' = t+1}^L \left(1 - \frac{1}{(t'+1)^\gamma}\right).$$
+$$P(x^Y \leftarrow Y_{1:t}) = \prod\limits_{t' = t+1}^L \left(1 - \frac{1}{(t'+1)^\gamma}\right) = (t+1)^\gamma f^{\gamma,L}_t.$$
 
-When $\gamma = 1$, then $P(x^Y \leftarrow Y_{1:t}) = (t+1)/(L+1)$.
+When $\gamma = 1$, $P(x^Y \leftarrow Y_{1:t}) = (t+1)/(L+1)$.
 
-4. $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t})$ is the probability that $x^Y$ came from $i$ given that it did not come from $Y_{1:t}$ (i.e. given that it was overwritten at some point from $t+1$ to $L$). Suppose $y_s = i$ for $t < s_1 < ... < s_{n^i_{t+1:L}}$ where $n^i_{t+1:L}$ is the number of times symbol $i$ appears in $Y_{t+1:L} \equiv (y_{t+1}, ..., y_L)$, such that $\sum_i n^i_{t+1:L} = L-t$.
+4. $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t})$ is the probability that $x^Y$ came from $i$ given that it did not come from $Y_{1:t}$ (i.e. given that it was overwritten at some point from $t+1$ to $L$). Suppose $y_s = i$ for $t < s_1 < ... < s_{n^i_v}$ where $n^i_v$ is the number of times symbol $i$ appears in $Y_{t+1:L} \equiv (y_{t+1}, ..., y_L)$, with $\sum\limits_i n^i_v = L-t$.
 
 We compute $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t})$ by summing over the probabilities of all the ways this could have occurred. Similar to the calculation for $P(x^Y \leftarrow i)$, we have
 
-$$P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = P(x^Y \leftarrow y_{s_1}| x^Y \not \leftarrow Y_{1:t}) + ... + P(x^Y \leftarrow y_{s_{n^i_{t+1:L}}}| x^Y \not \leftarrow Y_{1:t}).$$
+$$P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = P(x^Y \leftarrow y_{s_1}| x^Y \not \leftarrow Y_{1:t}) + ... + P(x^Y \leftarrow y_{s_{n^i_v}}| x^Y \not \leftarrow Y_{1:t}).$$
 
 By Bayes' Rule:
 
@@ -150,159 +187,44 @@ $$P(x^Y \leftarrow y_{s_k}| x^Y \not \leftarrow Y_{1:t}) = \frac{P(x^Y \not \lef
 
 since if $x^Y$ came from $y_{s_k}$, which is in the part of $Y$ after $t$, then $x^Y$ could have not have come from $Y_{1:t}$. We have already computed the numerator and denominator (which is just $1 - P(x^Y \leftarrow Y_{1:t}))$, so
 
-$$P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = \frac{1}{P(x^Y \not\leftarrow Y_{1:t})}\left( f^\gamma_{s_1}(x^Y) + ... + f^\gamma_{s_{n^i_{t+1:L}}}(x^Y) \right).$$
+$$P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = \frac{1}{P(x^Y \not\leftarrow Y_{1:t})}\left( f^{\gamma,L}_{s_1} + ... + f^{\gamma,L}_{s_{n^i_v}} \right).$$
 
-When $\gamma = 1$ this reduces to $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = \frac{n^i_{t+1:L}}{L-t}$, i.e. when $\gamma = 1$ the probability that $x^Y$ was taken from any symbol $i$, given that it was taken from some symbol at time $s > t$ is just proportional to how many times $i$ appears in the second part of the sequence $Y_{t+1:L}$.
+When $\gamma = 1$ this reduces to $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t}) = \frac{n^i_v}{L-t}$, i.e. it is proportional to how many times $i$ appears in the second part of the sequence $Y_{t+1:L}$.
 
-\subsection{Similarity between start code and sequence code}
-\label{sec:sml-start-seq}
+We now calculate how similar a sequence code is to any symbol code, as well as to other sequence codes.
 
-\textbf{Result}:
+\textbf{Similarity between symbol and sequence codes:}
 
-$$\textrm{E}[s(X^*, X^{Y'})] = P(x^* = x^Y) = \frac{1}{L+1} + \frac{1}{Z}\frac{L}{L+1}$$
-which tends to $1/(L+1)$ for $Z \gg L$.
+If $y_t = i$ for $0 < t_1 < ... < t_{n^i}$, then
+
+$$P(x^Y = x^i) = \frac{1}{Z} + \sum\limits_{t \in (t_1, ..., t_{n^i})}\left(1 - \frac{1}{Z}\right)f^{\gamma,L}_t.$$
+
+For $\gamma = 1$:
+
+$$P(x^Y = x^i) = \frac{n}{L+1} + \frac{1}{Z}\frac{L+1-n}{L+1}$$
+
+which tends to $n/(L+1)$ for large $Z$.
 
 \textbf{Proof}:
 
-We compute $P(x^* = x^Y)$ by expanding over all c-states $g \in G$:
+$$P(x^Y = x^i) = P(x^Y \leftarrow i)P(x^Y = x^i|x^Y \leftarrow i) + P(x^Y \not \leftarrow i)P(x^Y = x^i|x^Y \not \leftarrow i)$$
 
-$$P(x^* = x^Y) = P(x^* = g, x^Y = g) = \sum\limits_g P(x^* = g, x^Y = g|x^* = g)P(x^* = g)$$
+$$= P(x^Y \leftarrow i) + P(x^Y \not \leftarrow i)\frac{1}{Z}$$
 
-$$ = \frac{1}{Z}\sum\limits_g P(x^* = g, x^Y = g|x^* = g) = \frac{1}{Z}\sum\limits_g P(x^Y = g|x^* = g).$$
+$$= \sum\limits_{t \in (t_1, ..., t_{n^i})}f^{\gamma,L}_t + \left(1 - \sum\limits_{t \in (t_1, ..., t_{n^i})}f^{\gamma,L}_t\right)\frac{1}{Z}
+= \sum\limits_{t \in (t_1, ..., t_{n^i})}\left(1 - \frac{1}{Z}\right)f^{\gamma,L}_t + \frac{1}{Z}$$
 
-Further, since after marginalizing over $B$ and $\mu$ the encoding can favor no $g$ in particular,
+\textbf{Similarity between codes for two sequences:}
 
-$$\frac{1}{Z}\sum\limits_g P(x^Y = g|x^* = g) = \frac{1}{Z}ZP(x^Y = g|x^* = g) = P(x^Y = g|x^* = g)$$
+Let $Y = (y_1, ..., y_L)$ and $Y' = (y'_1, .., y'_{L'})$ be two sequences. Suppose they share a starting subsequence of length $t$, i.e. $y_1 = y'_1, ..., y_t = y'_t$, but either $y_{t+1} \neq y'_{t+1}$, $t = L$, or $t = L'$. We write this condition as $Y_{1:t} = Y'_{1:t}$. Similarly, we refer to the second parts of the sequences (the subsequences in which they differ) as $Y_{t+1:L}$ and $Y'_{t+1:L'}$, respectively. 
 
-for any arbitrary $g$.
+Let $u^i$ index the times $i$ appears in $Y_{1:t}$, $v^i$ the times $i$ appears in $Y_{t+1:L}$, and $(v')^i$ the times $i$ appears in $Y'_{t+1:L'}$. Let $n^i_u$ count how many times $i$ appears in $Y_{1:t}$, $n^i_v$ the number of times $i$ appears in $Y_{t+1:L}$, and $n^i_{v'}$ the number of times $i$ appears in $Y'_{t+1:L'}$. We also write these in vector format as $\mathbf{n}_u$, $\mathbf{n}_v$, and $\mathbf{n}_{v'}$, respectively, where each is a vector of length $M$.
 
-We now expand over the probability $P(x^Y \leftarrow X^*)$ that $x^Y$ in the sequence encoding came originally from $X^*$, which is 1 minus the probability $P(x^Y \not \leftarrow X^*)$ that $x^*$ was overwritten at some later point as the subsequent symbol codes were mixed in (even if it was overwritten by the same c-state $g$):
-
-$$P(x^Y = g|x^* = g) = P(x^Y = g|x^Y \leftarrow X^*, x^* = g)P(x^Y \leftarrow X^*) + P(x^Y = g|x^Y \not \leftarrow X^*, x^* = g)P(x^Y \not \leftarrow X^*)$$
-
-$$= P(x^Y \leftarrow X^*) + \frac{1}{Z}P(x^Y \not \leftarrow X^*)$$,
-
-where the $1/Z$ comes from the fact that all the $X^i$ corresponding to $y_1, ..., y_L$ are independent from $x^*$, so no matter which $X^i$ the c-state of $x^Y$ came from, it has a $1/Z$ chance of being the same as $x^*$. $P(x^Y \leftarrow X^*)$ is the probability $x^*$ was never masked over in the encoding process:
-
-$$P(x^Y \leftarrow X^*) = \frac{1}{2}\frac{2}{3}...\frac{L}{L+1} = \frac{1}{L+1}.$$
-
-Thus
-
-$$P(x^* = x^Y) = \frac{1}{L+1} + \frac{1}{Z}\left(1 - \frac{1}{L+1}\right) = \frac{1}{L+1} + \frac{1}{Z}\frac{L}{L+1}.$$
-
-\subsection{Similarity between symbol codes and the sequence code}
-
-\textbf{Result:}
-
-Let $\mathbf{n} = (n^1, ..., n^M)$ be a vector counting how many times each symbol $s^i$ is contained in $Y$, where $\sum\limits_i n_i = L.$
-If $s^i$ is contained $n^i$ times in $Y$ at locations $1 \leq t_1 <  ... < t_{n^i} \leq L$, then:
-
-$$P(x^Y = x^i) = \frac{n^i(Z-1) + L + 1}{(L+1)Z}$$
-
-which is independent of $t_1, ..., t_{n^i}$ and tends to $n^i/(L+1)$ for $Z \gg L.$ Thus, there will be large differences in similarities between $X^Y$ and $X^i$ as a function of how many times $s_i$ appeared in $Y$.
-
-\textbf{Proof:}
-
-$P(x^Y \neq x^i)$ is the probability $P(x^Y \not\leftarrow X_i)$ that $x^Y$ was either not taken from $X_i$ at any $t_k$ or was at some point overwritten, times $(Z-1)/Z$, the probability it was initially or at some point overwritten by something other than $x^i$, (since all symbol codes it could have been overwritten by are independent from $X^i$). In other words, 
-
-$$P(x^Y \neq x^i) = P(x^Y \not\leftarrow X^i)\frac{Z-1}{Z} = \left(1 - P(x^Y \leftarrow X^i)\right)\frac{Z-1}{Z} $$.
-
-Here $P(x^Y_j \leftarrow X_i)$ is the sum of the probabilities of all the ways $x^Y$ could have ended up being taken from $X^i$ without being overwritten later by the code for a different symbol $s^{i'} \neq s^i$. For instance, $x^Y$ could have been taken from $X^i$ at $t_k$ then left untouched for the remainder of the sequence construction; or it could have been taken from $X^i$ at both $t_k$ and $t_{k+1}$ then left untouched after $t_{k+1}$, and so forth.
-
-We can work backwards by first considering all cases where $x^Y$ was taken from $X^i$ at $t_{n^i}$ then left untouched; then all cases where $x^Y$ was taken from $X^i$ at $t_{n^i-1}$ then left untouched, even at $t_{n^i}$; then all cases where $x^Y$ was taken from $X^i$ at $t_{n^i-2}$ then left untouched, even at $t_{n^i-1}$ and $t_{n^i}$, and so on. All these sets of cases are mutually exclusive and furthermore cover all the combinatorial ways in which $x^Y$ could have been taken from $X^i$, so at the end we can just add up the probabilities.
-
-Conveniently, the sum of the probabilities over the first set of cases is just the probability $x^Y$ was taken from $X^i$ at $t_{n^i}$ and not overwritten later, since everything that happened before $t_{n^i}$ is irrelevant and marginalizes out. This probability is just 
-
-$$\frac{1}{t_{n^i}+1}\frac{t_{n^i}+1}{t_{n^i}+2}...\frac{L}{L+1} = \frac{1}{L+1}$$
-
-Similar logic applies for all $n^i$ sets of cases, so the total probability
-
-$$P(x^Y \leftarrow X^i) = \frac{n^i}{L+1} \textrm{, and } P(x^Y \not\leftarrow X^i) = \frac{L+1-n^i}{L+1}$$
-
-and therefore 
-
-$$P(x^Y = x^i) = 1 - P(x^Y \neq X^i) = 1 - \frac{L-n^i+1}{L+1}\frac{Z-1}{Z} = \frac{n^i(Z-1) + L + 1}{(L+1)Z}.$$
-
-\subsection{Similarity between codes for arbitrary sequences that share no starting subsequence}
-
-Let $Y = (y_1, ..., y_L)$ and $Y' = (y'_1, .., y'_{L'})$ be two sequences. 
-
-When $y_1 \neq y'_1$ (i.e. $Y$ and $Y'$ share no starting subsequence), then
-
-$$P(x^Y = x^{Y'}) = \frac{1}{(L+1)(L'+1)}\left[1 + \frac{L + L' + LL'}{Z} + \frac{Z-1}{Z}\mathbf{n}^T\mathbf{n}'\right]$$
-
-\textbf{Proof:}
-
-We first consider sequences where $y_1 \neq y'_1$, since then all mask operations are independent in constructing $X^Y$ and $X^{Y'}$. In this case we compute $P(x^Y = x^{Y'})$ by enumerating all nonoverlapping cases where this can occur then adding up their probabilities. These are:
-
-Case 1: $(x^Y \leftarrow X^*) and (x^{Y'} \leftarrow X^*)$, i.e. both $x$'s are taken from the start code i.e. not overwritten. These are independent, so
-
-$$P(\textrm{Case 1}) = P(x^Y \leftarrow X^*)P(x^{Y'} \leftarrow X^*) = \frac{1}{L+1}\frac{1}{L'+1}$$
-
-Case 2: $(x^Y \leftarrow X^*) and (x^{Y'} \not \leftarrow X^*) and (x^{Y'} = x^*)$, i.e. $x^Y$ is taken from $X^*$, whereas $x^{Y'}$ is overwritten by a state that just happens to equal $x^*$. The first term is independent from the second two, such that
-
-$$P(\textrm{Case 2}) = P(x^Y \leftarrow X^*)P(x^{Y'} \not \leftarrow X^*, x^{Y'} = x^*)$$
-
-$$ = \frac{1}{L+1}P(x^{Y'} \not \leftarrow X^*)P(x^{Y'} = x^*|x^{Y'} \not \leftarrow X^*) = \frac{1}{L+1}\frac{L'}{L'+1}\frac{1}{Z}.$$
-
-Case 3: $(x^{Y'} \leftarrow X^*) and (x^Y \not \leftarrow X^*) and (x^Y = x^*)$. This is symmetric to the previous case, so 
-
-$$P(\textrm{Case 3}) = \frac{1}{L'+1}\frac{L}{L+1}\frac{1}{Z}$$
-
-Case 4: $(x^Y \not \leftarrow X^*) and (x^{Y'} \not \leftarrow X^*) and (x^Y = x^{Y'})$ i.e. both $x$'s are overwritten but are overwritten by the same state. The first two events are independent, so
-
-$$P(\textrm{Case 4}) = \frac{L}{L+1}\frac{L'}{L'+1}P(x^Y = x^{Y'} | x^Y, x^{Y'} \not \leftarrow X^*)$$
-
-The final term depends on the structure of the two sequences (e.g. it will be high for $Y =$ "abbb" and $Y' =$ "cbbb" but low for $Y =$ "abcd" and $Y' =$ "efgh"). Denoting $X^i$ and $X^{i'}$ as the two symbol codes $x^Y$ and $x^{Y'}$ were taken from during the code construction, respectively, we can expand $P(x^Y = x^{Y'} | x^Y, x^{Y'} \not \leftarrow X^*) =$
-
-$$P(X^i = X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*)P(x^Y = x^{Y'}|X^i = X^{i'}; x^Y, x^{Y'} \not \leftarrow X^*)$$
-
-$$+ P(X^i \neq X^{i'} | x^Y, x^{Y'} \not \leftarrow X^*)P(x^Y = x^{Y'}|X^i \neq X^{i'}; x^Y, x^{Y'} \not \leftarrow X^*)$$
-
-$$ = P(X^i = X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*) + P(X^i \neq X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*)\frac{1}{Z}.$$
-
-To compute $P(X^i = X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*)$, the probability that $x^Y$ and $x^{Y'}$ were taken from the same symbol code, we first note that the probability $x^Y$ was taken from $X^i$ is independent from the probability $x^{Y'}$ was taken from $X^{i'}$, i.e.
-
-$$p(x^Y \leftarrow X^i, x^{Y'} \leftarrow X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*)$$
-
-$$ = p(x^Y \leftarrow X^i| x^Y, x^{Y'} \not \leftarrow X^*)p(x^{Y'} \leftarrow X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*)= \frac{n^i}{L}\frac{(n')^{i'}}{L'}$$
-
-(Note that we have $L$ instead of $L + 1$ in the denominator because we have already conditioned on $x^Y \not \leftarrow X^*$.) If we were to write this as a matrix, the probability $P(X^i = X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*)$ is just the sum over all ways $X^i$ could equal $X^{i'}$, which is the sum of the diagonal. Therefore
-
-Therefore
-
-$$P(X^i = X^{i'}| x^Y, x^{Y'} \not \leftarrow X^*) = \sum\limits_{l = 1}^M\frac{n^l(n')^l}{LL'} = \frac{\mathbf{n}^T\mathbf{n}'}{LL'}.$$
-
-Thus 
-
-$$P(x^Y = x^{Y'}| x^Y, x^{Y'} \not \leftarrow X^*) = \frac{\mathbf{n}^T\mathbf{n}'}{LL'} + \left(1 - \frac{\mathbf{n}^T\mathbf{n}'}{LL'}\right)\frac{1}{Z}$$
-
-so 
-$$P(\textrm{Case 4}) = \frac{L}{L+1}\frac{L'}{L'+1}\left[\frac{\mathbf{n}^T\mathbf{n}'}{LL'} + \left(1 - \frac{\mathbf{n}^T\mathbf{n}'}{LL'}\right)\frac{1}{Z}\right].$$
-
-The total probability $P(x^Y = x^Y')$ is the sum $P(\textrm{Case 1}) + P(\textrm{Case 2}) + P(\textrm{Case 3}) + P(\textrm{Case 4})$ is then
-
-$$P(x^Y = x^Y') = \frac{1}{L+1}\frac{1}{L'+1} + \frac{1}{L+1}\frac{L'}{L'+1}\frac{1}{Z} + \frac{1}{L'+1}\frac{L}{L+1}\frac{1}{Z}$$
-
-$$ + \frac{L}{L+1}\frac{L'}{L'+1}\left[\frac{\mathbf{n}^T\mathbf{n}'}{LL'} + \left(1 - \frac{\mathbf{n}^T\mathbf{n}'}{LL'}\right)\frac{1}{Z}\right]$$
-
-$$= \frac{1}{(L+1)(L'+1)}\left[1 + \frac{L + L'}{Z} + \mathbf{n}^T\mathbf{n}' + \left(1 - \frac{\mathbf{n}^T\mathbf{n}'}{LL'}\right)\frac{LL'}{Z}\right]$$
-
-$$= \frac{1}{(L+1)(L'+1)}\left[1 + \frac{L + L' + LL'}{Z} + \frac{Z-1}{Z}\mathbf{n}^T\mathbf{n}'\right]$$
-
-which tends to 
-
-$$\frac{1 + \mathbf{n}^T\mathbf{n}'}{(L+1)(L'+1)}$$
-
-for large $Z \gg LL'$, which collapses to $1/[(L+1)(L'+1)]$ when $Y$ and $Y'$ share no symbols ($\mathbf{n}^T\mathbf{n}' = 0$).
-
-\subsection{Similarity between codes for arbitrary sequences}
-
-Let $Y = (y_1, ..., y_L)$ and $Y' = (y'_1, .., y'_{L'})$ be two sequences. Suppose they share a starting subsequence of exactly length $t$, i.e. $y_1 = y'_1, ..., y_t = y'_t$, but either $y_{t+1} \neq y'_{t+1}$, $t = L$, or $t = L'$. We write this condition as $Y_{1:t} \neq Y'_{1:t}$. Similarly, we refer to the second halves of the sequences (the subsequences in which they differ) as $Y_{t+1:L}$ and $Y'_{t+1:L'}$, respectively. (Starting subsequences are special because sequences are reconstructed from beginning to end.)
+Note that we must deal specially with starting subsequences because sequence codes are constructed from beginning to end.
 
 Then we have:
 
-Note that when $Y$ and $Y'$ do not start with the same subsequence (i.e. $t = 0$) this reduces to
+Wrong: Note that when $Y$ and $Y'$ do not start with the same subsequence (i.e. $t = 0$) this reduces to
 
 $$P(x^Y = x^{Y'}) = \frac{1}{(L+1)(L'+1)}\left[1 + \frac{L + L' + LL'}{Z} + \frac{Z-1}{Z}\mathbf{n}^T\mathbf{n}'\right]$$
 
@@ -310,84 +232,170 @@ $$P(x^Y = x^{Y'}) = \frac{1}{(L+1)(L'+1)}\left[1 + \frac{L + L' + LL'}{Z} + \fra
 
 Since $Y_{1:t} = Y'_{1:t}$,  first note that $X^{Y_{1:t}} = X^{Y'_{1:t}}$, so $x^{Y_{1:t}} = x^{Y'_{1:t}}$. We wish to find $P(x^Y = x^{Y'})$.
 
-The event $x^Y = x^{Y'}$ can occur in 4 distinct ways:
+The event $x^Y = x^{Y'}$ can occur in 4 distinct ways, whose probabilities sum to $P(x^Y = x^{Y'})$. At present we work under the assumption that all symbol codes are different and that $Y \neq Y' \implies X^{Y} \neq X^{Y'}.$
 
-\textbf{Case 1}: $(x^Y \leftarrow X^{Y_{1:t}}) and (x^{Y'} \leftarrow X^{Y'_{1:t}})$, i.e. neither $x$ is overwritten from $t+1$ to $L$ or $L'$. These events are independent, so
+\textbf{Case 1}: $(x^Y \leftarrow Y_{1:t}) \land (x^{Y'} \leftarrow Y'_{1:t})$, i.e. neither $x$ is overwritten at $t+1$ or later. These events are independent, so
 
-$$P(\textrm{Case 1}) = P(x^Y \leftarrow X^{Y_{1:t}})P(x^{Y'} \leftarrow X^{Y'_{1:t}}) = \frac{t+1}{L+1}\frac{t+1}{L'+1}$$
+$$P(\textrm{Case 1}) = P(x^Y \leftarrow Y_{1:t})P(x^{Y'} \leftarrow Y'_{1:t}) = (t+1)^\gamma f^{\gamma,L}_t(t+1)^\gamma f^{\gamma,L'}_t$$
 
-\textbf{Case 2}: $(x^Y \not\leftarrow Y_{1:t}) and (x^{Y'} \not\leftarrow Y'_{1:t}) and (x^Y = x^{Y'})$, i.e. $x$ is overwritten in both sequences at some point between $t+1$ and $L$ or $L'$, but by the same c-state. Since the first two conditions are again independent, 
+When $\gamma = 1$, then:
 
-$$P(\textrm{Case 2}) = \frac{L-t}{L+1}\frac{L'-t}{L'+1}P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})$$
+$$P(\textrm{Case 1}) = \frac{t+1}{L+1}\frac{t+1}{L'+1}$$.
 
-where we recall that $X^{Y_{1:t}} = X^{Y'_{1:t}}$. If both $x$'s are overwritten, then they can end up with the same c-state if (1) $x^Y$ and $x^{Y'}$ are taken from the same symbol code $X^i$ (for any symbol code), which probability we write as $P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})$ or (2) $x^Y$ and $x^{Y'}$ are taken from different symbol codes but end up with the same c-state, which probability is given by $P(x^Y, x^{Y'} \not\leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})(1/Z)$. That is,
+\textbf{Case 2}: $(x^Y \not\leftarrow Y_{1:t}) \land (x^{Y'} \not\leftarrow Y'_{1:t}) \land (x^Y = x^{Y'})$, i.e. $x$ is overwritten in both sequences at some point between $t+1$ and $L$ or $L'$, but by the same c-state. Since the first two conditions are again independent we have
+
+$$P(\textrm{Case 2}) = P(x^Y \not\leftarrow Y_{1:t})P(x^{Y'} \not\leftarrow Y'_{1:t})P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})$$
+
+$$= [1 - (t+1)^\gamma f^{\gamma,L}_t][1 - (t+1)^\gamma f^{\gamma,L'}_t]P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})
+
+where we recall that $Y_{1:t} = Y'_{1:t}$. When $\gamma = 1$ this simplifies to
+
+$$P(\textrm{Case 2}) = \frac{L-t}{L+1}\frac{L'-t}{L'+1}P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})$$
+
+To find $P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})$ we note that if both $x$'s are overwritten, they can end up with the same c-state if (1) $x^Y$ and $x^{Y'}$ are taken from the same symbol $i$, whose probability we write as $P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow Y_{1:t})$ or (2) $x^Y$ and $x^{Y'}$ are taken from different symbol codes but end up with the same c-state. That is,
 
 $$P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) =$$
 
-$$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) + P(x^Y, x^{Y'} \not\leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})\frac{1}{Z}.$$
+$$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) + [1 - P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow Y_{1:t})]\frac{1}{Z}.$$
 
-$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})$ is the sum over symbol codes $X^i$ of the probabilities that both $x^Y$ and $x^{Y'}$ ended up being taken from $X^i$. These events are independent and equal to $n^i_{t+1:L}/(L-t)$ and $(n'_{t+1:L'})^i/(L'-t)$, respectively, so
+$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})$ is the sum over $i \in \{1, ..., M\}$ of the probabilities that both $x^Y$ and $x^{Y'}$ ended up being taken from $i$. These events are independent, so:
 
-$$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = \sum_i \frac{n^i_{t+1:L}(n'_{t+1:L'})^i}{(L-t)(L'-t)} = \frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)}$$
+$$P(x^Y, x^{Y'} \leftarrow i|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = P(x^Y \leftarrow i|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})P(x^{Y'} \leftarrow i|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}})$$
 
-Thus
+$$ = \frac{\sum\limits_{v^i} f_{v^i}^{\gamma,L}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}.$$
 
-$$P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = \frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)} \right)\frac{1}{Z}$$
+When $\gamma = 1$, this simplifies to
 
-so
-
-$$P(\textrm{Case 2}) = \frac{L-t}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)} \right)\frac{1}{Z}\right].$$
-
-\textbf{Case 3}: $(x^Y \leftarrow X^{Y_{1:t}}) and (x^{Y'} \not\leftarrow X^{Y'_{1:t}}) and (x^Y = x^{Y'})$, i.e. $x$ is untouched in the first sequence but overwritten in the second, but happens to be overwritten by $x^{Y_{1:t}}$. Once again the first two events are independent, so 
-
-$$P(\textrm{Case 3}) = \frac{t+1}{L+1}\frac{L'-t}{L'+1}P(x^Y = x^{Y'}|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}}).$$
-
-By similar reasoning as in Case 2, the event $(x^Y = x^{Y'}|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}})$ can occur if (1) $x^Y$ and $x^{Y'}$ are taken from the same symbol code $X^i$ (for any symbol code) or (2) $x^Y$ and $x^{Y'}$ are taken from different symbol codes but end up with the same c-state, whose probability is $P(x^Y, x^{Y'} \not\leftarrow same|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}})(1/Z)$.
-
-As in Case 2 we compute $P(x^Y, x^{Y'} \leftarrow same|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}})$ by computing the sum over all $X^i$ of the probabilities that both $x^Y$ and $x^{Y'}$ were taken from $X^i$. Luckily, which symbol $x^Y$ was taken from in $Y_{1:t}$ and which symbol $x^{Y'}$ was taken from in $Y'_{t+1:L'}$ remain independent, so we have
-
-$$P(x^Y, x^{Y'} \leftarrow same|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}}) = $$
-
-$$\sum_i P(x^Y \leftarrow X^i|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}})P(x^{Y'} \leftarrow X^i|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}})$$
-
-$$= \sum_i \frac{n^i_{1:t}}{t+1} \frac{(n'_{t+1:L'})^i}{L'-t} = \frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)}$$
+$$\frac{n^i_v}{L-t}\frac{n^i_{v'}}{L'-t}$$.
 
 Thus
 
-$$P(x^Y = x^{Y'}|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}}) = \frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)}\right)\frac{1}{Z}$$
+$$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = \sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}.$$
 
-so 
+When $\gamma = 1$ this is
 
-$$P(\textrm{Case 3}) = \frac{t+1}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)}\right)\frac{1}{Z}\right].$$
+$$P(x^Y, x^{Y'} \leftarrow same|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = \sum_i \frac{n^i_vn^i_{v'}}{(L-t)(L'-t)} = \frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)}$$
 
-\textbf{Case 4}: $(x^{Y'} \leftarrow X^{Y'_{1:t}}) and (x^Y \not\leftarrow X^{Y_{1:t}}) and (x^Y = x^{Y'})$, i.e. $x$ is untouched in the second sequence but overwritten in the first, but happens to be overwritten by $x^{Y'_{1:t}}$. This is symmetric to Case 3, so 
+i.e. when $\gamma = 1$ the probability that $x^Y$ came from the same symbol, given that it was overwritten in the second part of both sequence constructions, is just the normalized dot product of the symbol-count vectors for the second parts of the two sequences.
 
-$$P(\textrm{Case 4}) = \frac{t+1}{L'+1}\frac{L-t}{L+1}\left[\frac{\mathbf{n}'^T_{1:t}\mathbf{n}_{t+1:L}}{(t+1)(L-t)} + \left(1 - \frac{\mathbf{n}'^T_{1:t}\mathbf{n}_{t+1:L}}{(t+1)(L-t)}\right)\frac{1}{Z}\right].$$
+Thus
 
-\textbf{Sum of all cases}: The total probability $P(x^Y = x^{Y'}) = P(\textrm{Case 1}) + P(\textrm{Case 2}) + P(\textrm{Case 3}) + P(\textrm{Case 4})$ is then
+$$P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = $$
 
-$$P(x^Y = x^{Y'}) = \frac{t+1}{L+1}\frac{t+1}{L'+1} + $$
+$$\sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t} + \left(1 - \sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}\right)\frac{1}{Z}$$
 
-$$\frac{L-t}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'}}{(L-t)(L'-t)} \right)\frac{1}{Z}\right] + $$
+When $\gamma = 1$
 
-$$\frac{t+1}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'}}{(t+1)(L'-t)}\right)\frac{1}{Z}\right] + $$
+$$P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow X^{Y_{1:t}}) = \frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} \right)\frac{1}{Z}.$$
 
-$$\frac{t+1}{L'+1}\frac{L-t}{L+1}\left[\frac{\mathbf{n}'^T_{1:t}\mathbf{n}_{t+1:L}}{(t+1)(L-t)} + \left(1 - \frac{\mathbf{n}'^T_{1:t}\mathbf{n}_{t+1:L}}{(t+1)(L-t)}\right)\frac{1}{Z}\right]$$
+Thus
 
+$$P(\textrm{Case 2}) = [1 - (t+1)^\gamma f^{\gamma,L}_t][1 - (t+1)^\gamma f^{\gamma,L'}_t] \times$$
+
+$$\left[
+\sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t} + \left(1 - \sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}\right)\frac{1}{Z}
+\right]$$
+
+When $\gamma = 1$:
+
+$$P(\textrm{Case 2}) = \frac{L-t}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} \right)\frac{1}{Z}\right].$$
+
+\textbf{Case 3}: $(x^Y \leftarrow Y_{1:t}) \land (x^{Y'} \not\leftarrow Y'_{1:t}) \land (x^Y = x^{Y'})$, i.e. $x$ is untouched in the first sequence but overwritten in the second, but happens to be overwritten by $x^{Y_{1:t}}$. Once again the first two events are independent, so 
+
+$$P(\textrm{Case 3}) = (t+1)^\gamma f^{\gamma,L}_t[1-(t+1)^\gamma f^{\gamma,L'}_t]P(x^Y = x^{Y'}|x^Y \leftarrow Y_{1:t}, x^{Y'} \not\leftarrow Y'_{1:t}).$$
+
+When $\gamma = 1$:
+
+$$P(\textrm{Case 3}) = \frac{t+1}{L+1}\frac{L'-t}{L'+1}P(x^Y = x^{Y'}|x^Y \leftarrow Y_{1:t}, x^{Y'} \not\leftarrow Y'_{1:t}).$$
+
+By similar reasoning as in Case 2, the event $(x^Y = x^{Y'}|x^Y \leftarrow X^{Y_{1:t}}, x^{Y'} \not\leftarrow X^{Y'_{1:t}})$ can occur if (1) $x^Y$ and $x^{Y'}$ are taken from the same symbol $i$ or (2) $x^Y$ and $x^{Y'}$ are taken from different symbols but end up with the same c-state.
+
+Following similar logic as in Case 2, except swapping $Y^{t+1:L}$ with $Y^{1:t}$ we thus have
+
+$$P(x^Y = x^{Y'}|x^Y \leftarrow Y_{1:t}, x^{Y'} \not\leftarrow Y'_{1:t}) =$$
+
+$$\left[
+\sum_i \frac{\sum\limits_{u^i} f_{u^i}^{\gamma, t} \sum\limits_{(v')^i} f_{(v')^i}^{\gamma,L'}}{1 - (t+1)^\gamma f^{\gamma,L'}_t} 
++ \left(1 - \sum_i \frac{\sum\limits_{u^i} f_{u^i}^{\gamma, t} \sum\limits_{(v')^i} f_{(v')^i}^{\gamma,L'}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}\right)\frac{1}{Z}
+\right]$$
+
+When $\gamma = 1$:
+
+$$P(x^Y = x^{Y'}|x^Y \leftarrow Y_{1:t}, x^{Y'} \not\leftarrow Y'_{1:t}) =
+\frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} \right)\frac{1}{Z}$$
+
+Thus,
+
+$$P(\textrm{Case 3}) = (t+1)^\gamma f^{\gamma,L}_t[1-(t+1)^\gamma f^{\gamma,L'}_t] \times 
+\left[
+\sum_i \frac{\sum\limits_{u^i} f_{u^i}^{\gamma, t} \sum\limits_{(v')^i} f_{(v')^i}^{\gamma,L'}}{1 - (t+1)^\gamma f^{\gamma,L'}_t} 
++ \left(1 - \sum_i \frac{\sum\limits_{u^i} f_{u^i}^{\gamma, t} \sum\limits_{(v')^i} f_{(v')^i}^{\gamma,L'}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}\right)\frac{1}{Z}
+\right]$$
+
+And when $\gamma = 1$:
+
+$$P(\textrm{Case 3}) = \frac{t+1}{L+1}\frac{L'-t}{L'+1}\left[
+\frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} \right)\frac{1}{Z}
+\right].$$
+
+\textbf{Case 4}: $(x^Y \not \leftarrow Y_{1:t}) \land (x^{Y'} \leftarrow Y'_{1:t}) \land (x^Y = x^{Y'})$, i.e. $x$ is untouched in the second sequence but overwritten in the first, but happens to be overwritten by $x^{Y'_{1:t}}$. This is symmetric to Case 3, so
+
+$$P(\textrm{Case 4}) = [1 - (t+1)^\gamma f^{\gamma,L}_t](t+1)^\gamma f^{\gamma,L'}_t \times \left[
+\sum_i \frac{\sum\limits_{v^i} f_{v^i}^{\gamma,L}\sum\limits_{u^i} f_{u^i}^{\gamma, t}}{1 - (t+1)^\gamma f^{\gamma,L}_t} 
++ \left(1 - \sum_i \frac{\sum\limits_{v^i} f_{v^i}^{\gamma,L}\sum\limits_{u^i} f_{u^i}^{\gamma, t}}{1 - (t+1)^\gamma f^{\gamma,L}_t}\right)\frac{1}{Z}
+\right]$$
+
+And when $\gamma = 1$:
+
+$$P(\textrm{Case 4}) = \frac{L'-t}{L+1}\frac{t+1}{L'+1}\left[
+\frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} + \left(1 - \frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} \right)\frac{1}{Z}
+\right].$$
+
+\textbf{Sum over all cases}
+
+$$P(x^Y = x^{Y'}) = P(\textrm{Case 1}) + P(\textrm{Case 2}) + P(\textrm{Case 3}) + P(\textrm{Case 4}) = $$
 
 $$
-=\frac{1}{(L+1)(L'+1)}\left[(t+1)^2 + \frac{Z-1}{Z}\left[\mathbf{n}^T_{t+1:L}\mathbf{n}'_{t+1:L'} + \mathbf{n}^T_{1:t}\mathbf{n}'_{t+1:L'} + \mathbf{n}'^T_{1:t}\mathbf{n}_{t+1:L}\right]\right]
+(t+1)^\gamma f^{\gamma,L}_t(t+1)^\gamma f^{\gamma,L'}_t + [1 - (t+1)^\gamma f^{\gamma,L}_t][1 - (t+1)^\gamma f^{\gamma,L'}_t] \times$$
+
+$$\left[
+\sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t} + \left(1 - \sum_i \frac{\sum\limits_{v^i} f^{\gamma,L}_{v^i}}{1 - (t+1)^\gamma f^{\gamma,L}_t} \frac{\sum\limits_{(v')^i} f^{\gamma,L'}_{(v')^i}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}\right)\frac{1}{Z}
+\right]$$
+
+$$+(t+1)^\gamma f^{\gamma,L}_t[1-(t+1)^\gamma f^{\gamma,L'}_t] \times 
+\left[
+\sum_i \frac{\sum\limits_{u^i} f_{u^i}^{\gamma, t} \sum\limits_{(v')^i} f_{(v')^i}^{\gamma,L'}}{1 - (t+1)^\gamma f^{\gamma,L'}_t} 
++ \left(1 - \sum_i \frac{\sum\limits_{u^i} f_{u^i}^{\gamma, t} \sum\limits_{(v')^i} f_{(v')^i}^{\gamma,L'}}{1 - (t+1)^\gamma f^{\gamma,L'}_t}\right)\frac{1}{Z}
+\right]
 $$
 
+$$+[1 - (t+1)^\gamma f^{\gamma,L}_t](t+1)^\gamma f^{\gamma,L'}_t \times \left[
+\sum_i \frac{\sum\limits_{v^i} f_{v^i}^{\gamma,L}\sum\limits_{u^i} f_{u^i}^{\gamma, t}}{1 - (t+1)^\gamma f^{\gamma,L}_t} 
++ \left(1 - \sum_i \frac{\sum\limits_{v^i} f_{v^i}^{\gamma,L}\sum\limits_{u^i} f_{u^i}^{\gamma, t}}{1 - (t+1)^\gamma f^{\gamma,L}_t}\right)\frac{1}{Z}
+\right]
 $$
-+ \frac{1}{(L+1)(L'+1)}\frac{1}{Z}\left[(L-t)(L'-t) + (t+1)(L'-t) + (t+1)(L-t)\right]
+
+When $\gamma = 1$, then $P(x^Y = x^{Y'}) = $
+
+$$\frac{t+1}{L+1}\frac{t+1}{L'+1}
++ \frac{L-t}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} \right)\frac{1}{Z}\right]
 $$
+
+$$+\frac{t+1}{L+1}\frac{L'-t}{L'+1}\left[
+\frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} \right)\frac{1}{Z}
+\right]
+$$
+
+$$+\frac{L'-t}{L+1}\frac{t+1}{L'+1}\left[
+\frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} + \left(1 - \frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} \right)\frac{1}{Z}
+\right]
+$$
+
+\textbf{OLD STARTS HERE}
 
 This means that when $Y'$ is a starting subsequence of $Y$, i.e. $Y = (y'_1, ..., y'_t, y_{t+1}, ..., y_L)$ then the two sequences' expected similarity is equal to
 
 $$P(x^{Y'} = x^Y) = \frac{1}{(L+1)(t+1)}\left((t+1)^2 + \frac{Z-1}{Z}\mathbf{n}^T_{1:t}\mathbf{n}_{t+1:L} + \frac{(t+1)(L-t)}{Z}\right).$$
-
-\section{Adding composite symbols to the dictionary}
 
 \section{Comparison to existing hyperdimensional computing codes}
 
@@ -423,5 +431,8 @@ Guy Hadash, Einat Kermany, Boaz Carmeli, Ofer Lavi, George Kour, and Alon
 
 \end{thebibliography}
 
+\section{Appendix}
+
+Blah blah
 
 \end{document}
