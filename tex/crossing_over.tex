@@ -29,16 +29,16 @@
 \maketitle
 
 \begin{abstract}
-I present a method for encoding structured information in fixed-length vectors. Drawing on ideas from high-dimensional (HD) computing, the presented scheme encodes elements of information as HD random vectors, and relationships among them (like sequences or trees) by (pseudo-)randomly weaving these vectors together via an operation analogous to chromosomal crossover. Unlike previous HD coding schemes, "crossover" codes retain low Hamming distance to the multi-level sub-relationships that comprise them--all the way down to their base elements--yet high distance to alternative elements or relationships. Accurate decoding can thus occur via greedy reconstruction of the representation. Unlike most machine-learning approaches, crossover (as in other HD computing schemes) requires no training, making it highly amenable to mathematical analysis. I derive several of its formal properties and discuss its relevance to neuroscience and artificial intelligence.
+I present a method for encoding structured information in fixed-length vectors. Drawing on ideas from high-dimensional (HD) computing, the presented scheme encodes elements of information as HD random vectors and sequences of elements by (pseudo-)randomly weaving these vectors together via an operation analogous to chromosomal crossover. "Crossover" codes retain low Hamming distance to both their elements and the codes for the subsequences used to build them, yet high distance to alternative elements or sequences. Accurate decoding can thus occur via greedy reconstruction of the representation. Unlike most machine-learning approaches, crossover (as in other HD computing schemes) requires no training, making it highly amenable to mathematical analysis. I derive several properties of crossover and discuss its relevance to neuroscience and artificial intelligence.
 \end{abstract}
 
 
 % keywords can be removed
-\keywords{Hyperdimensional computing \and Vector symbolic architectures \and Sequence encoding \and k-ary tree encoding \and Computational neuroscience}
+\keywords{Hyperdimensional computing \and Vector symbolic architectures \and Sequence encoding \and Computational neuroscience \and Artificial intelligence \and Cognitive computing}
 
 
 \section{Introduction}
-A core problem in neuroscience is how the brain represents a complex event like a spoken sentence using relatively fixed dimensions. Ideally similar events should have similar representations, and when a new event occurs pre-existing representations shouldn't require substantial rearrangement to prevent confusion.
+A core problem in neuroscience and artificial intelligence is how to represent a complex event like a spoken sentence using relatively fixed dimensions. Ideally similar events should have similar representations, and when a new event occurs pre-existing representations shouldn't require substantial rearrangement to prevent confusion.
 
 One approach to solving this has been to assume representations are built from high-dimensional (HD) random vectors \ref{}. Such approach is fundamentally motivated by the observation that independent HD random vectors are very close to orthogonal (and far apart under other distance metrics) with very high probability. Thus, if one considers a codebook where $M$ objects are assigned to $M$ independently sampled HD random vectors, the codes are very unlikely to be confused. 
 
@@ -69,15 +69,112 @@ In practice $\mu$ need not be sampled explicitly, which would take astronomical 
 \section{Properties}
 
 \subsection{Sequence codes have i.i.d. components}
-\label{sec:iid-comp}
-
-\textbf{Result:}
+\label{sec:prop-comp-iid}
 
 $$P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y) \quad \textrm{and} \quad P(x^Y_j|Y) = P(x^Y_{j'}|Y) \quad \forall j, j'$$
 
-??? A corollary is that if $Y \sim P(Y)$ then $P(x^Y_j) = P(x^Y_{j'}) \quad \forall j, j' \in [1, ..., N]^2$, and similarly $P(X^Y) $
+\subsection{Component distributions are uniform over c-states}
+\label{sec:prop-unif-comp-dstr}
 
-\textbf{Proof:}
+$$P(x^Y_j = g|Y) = P(x^Y_j = g'|Y) = \frac{1}{Z} \quad \forall g, g' \in G \quad \textrm{so} \quad P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y) = \frac{1}{Z^N}$$
+
+This implies neither $P(x^Y_j = g|Y)$ nor $P(X^Y|Y)$ are a function of $Y$. Thus, if $Y \sim P(Y)$ we then also have
+
+$$P(x_j) = \sum\limits_Y P(x^Y_j|Y)P(Y) = \frac{1}{Z} \quad \textrm{and} \quad P(X) = \sum\limits_Y P(X^Y|Y)P(Y) = \frac{1}{Z^N}.$$
+
+\subsection{Code statistics are invariant to sequence statistics}
+
+$$P(X^Y|Y) \textrm{ does not depend on any statistic (e.g. length, symbol repetitions, etc) of } Y.$$
+
+\subsection{Sequence information is i.i.d. across components}
+\label{sec:prop-info-iid}
+
+Given $B$, $\mu$, and a distribution over sequences $P_Y(Y)$ with entropy $H[Y]$, define the information $I_j | B, \mu$ in component $j$ as the mutual information between $Y$ and $x_j$, i.e.
+
+$$I_j | B, \mu \equiv MI[Y|x_j; B, \mu] = H[Y] - H[Y|x_j; B, \mu] = H[Y] - \sum_g H[Y|x_j = g; B, \mu] P_Y(x_j = g| B, \mu).$$
+
+Then:
+
+$$P(I_1, ..., I_N) = \prod_j P(I_j) \quad \textrm{and} \quad P(I_j) = P(I_{j'}) \quad \forall j, j'.$$
+
+In other words, each component contains independent and equal information about the sequence. (Note that this does not imply $I_j = I_{j'}$ for any given $B$ and $\mu$, since there are $B, \mu$ in which some $x_j$ are less informative about $Y$ than others, e.g. if some $x_j$ by chance has the same c-state for all $Y$.) This means that the code's robustness to random and targeted lesions are equivalent, depending only on how many components were damaged.
+
+\section{Code similarities}
+
+We give results for $\gamma = 1$ here, with results for arbitrary $\gamma$ in the appendix.
+
+Since $x^Y_j$ are i.i.d. across $j$ (\ref{sec:prop-comp-iid}) it follows that $s(X^Y, X^{Y'}) \sim \frac{1}{N}\textrm{Bi}(N, q)$, where $\textrm{Bi}(N, q)$ is a binomial distribution with success probability $q = P(x^Y_j = x^{Y'}_j)$. Thus, $\textrm{E}[s(X^Y, X^{Y'})] = q$ and $\textrm{Var}[s(X^Y, X^{Y'})] = q(1-q)/N$, and it suffices to only compute $q$. For conciseness, we drop the $j$ and write $x \equiv x_j$ from now on. 
+
+\subsection{Similarity between symbol and sequence codes}
+
+If there are $n^i$ repetitions of symbol $i$ appears in $Y$, then:
+
+$$P(x^Y = x^i) = \frac{n^i}{L+1} + \frac{1}{Z}\frac{L+1-n^i}{L+1}$$
+
+which tends to $n^i/(L+1)$ for large $Z$.
+
+\subsection{Similarity between codes for two sequences}
+
+Let $Y = (y_1, ..., y_L)$ and $Y' = (y'_1, .., y'_{L'})$ be two sequences that share a starting subsequence of length $t$. I.e. $y_1 = y'_1, ..., y_t = y'_t$, but either $y_{t+1} \neq y'_{t+1}$, $t = L$, or $t = L'$. We write that $Y_{1:t} = Y'_{1:t}$, and we refer to the second parts of the sequences as $Y_{t+1:L}$ and $Y'_{t+1:L'}$, respectively. We must deal specially with starting subsequences because sequence codes are constructed from beginning to end.
+
+Let $\mathbf{n}_u$ be the length-$M$ symbol count vector for $Y_{1:t} = Y'_{1:t}$ with $\mathbf{1}^T\mathbf{n}_u = t$. Let $\mathbf{n}_v$ and $\mathbf{n}_{v'}$ be the symbol count vectors for $Y_{t+1:L}$ and $Y'_{t+1:L'}$, respectively, with $\mathbf{1}^T\mathbf{n}_{v} = L - t$ and $\mathbf{1}^T\mathbf{n}_{v'} = L' - t$. Then:
+
+$$P(x^Y = x^{Y'}) = \frac{t+1}{L+1}\frac{t+1}{L'+1}$$
+
+$$+ \frac{1}{L+1}\frac{1}{L'+1}\left[\mathbf{n}^T_v\mathbf{n}_{v'} + \left((L-t)(L'-t) - \mathbf{n}^T_v\mathbf{n}_{v'} \right)\frac{1}{Z}\right]
+$$
+
+$$+\frac{1}{L+1}\frac{1}{L'+1}\left[
+\mathbf{n}^T_{u}\mathbf{n}_{v'} + \left((t+1)(L'-t) - \mathbf{n}^T_{u}\mathbf{n}_{v'} \right)\frac{1}{Z}
+\right]
+$$
+
+$$+\frac{1}{L+1}\frac{1}{L'+1}\left[
+\mathbf{n}^T_{v}\mathbf{n}_{u} + \left((L-t)(t+1) - \mathbf{n}^T_{v}\mathbf{n}_{u} \right)\frac{1}{Z}
+\right]
+$$
+
+This means that when $Y'$ is a starting subsequence of $Y$, i.e. $Y' = Y_{1:t}$ then the two sequences' expected similarity is
+
+$$P(x^{Y'} = x^Y) = \frac{1}{(L+1)(t+1)}\left((t+1)^2 + \frac{Z-1}{Z}\mathbf{n}^T_{1:t}\mathbf{n}_{t+1:L} + \frac{(t+1)(L-t)}{Z}\right).$$
+
+\section{Comparison to existing hyperdimensional computing codes}
+
+
+
+
+\bibliographystyle{unsrt}  
+%\bibliography{references}  %%% Remove comment to use the external .bib file (using bibtex).
+%%% and comment out the ``thebibliography'' section.
+
+
+%%% Comment out this section when you \bibliography{references} is enabled.
+\begin{thebibliography}{1}
+
+\bibitem{kour2014real}
+George Kour and Raid Saabne.
+\newblock Real-time segmentation of on-line handwritten arabic script.
+\newblock In {\em Frontiers in Handwriting Recognition (ICFHR), 2014 14th
+  International Conference on}, pages 417--422. IEEE, 2014.
+
+\bibitem{kour2014fast}
+George Kour and Raid Saabne.
+\newblock Fast classification of handwritten on-line arabic characters.
+\newblock In {\em Soft Computing and Pattern Recognition (SoCPaR), 2014 6th
+  International Conference of}, pages 312--318. IEEE, 2014.
+
+\bibitem{hadash2018estimate}
+Guy Hadash, Einat Kermany, Boaz Carmeli, Ofer Lavi, George Kour, and Alon
+  Jacovi.
+\newblock Estimate and replace: A novel approach to integrating deep neural
+  networks with existing applications.
+\newblock {\em arXiv preprint arXiv:1804.09028}, 2018.
+
+\end{thebibliography}
+
+\section{Appendix}
+
+\subsection{Proof: Sequence codes have i.i.d. components}
 
 Denoting $Y_{1:t} \equiv (y_1, ..., y_t)$ with $Y_{1:L} = Y$, and $B_j \equiv (x^1_j, ..., x^M_j, x^*_j)$, we want to show that $x_j^{Y_{1:t}}$ are independent across $j$ for all $t$.
 
@@ -99,61 +196,23 @@ Therefore $x_j^{Y_{1:t}}$ is independent across $j$ for all $t$, in other words 
 
 The equality $P(x^Y_j|Y) = P(x^Y_{j'}|Y) \quad \forall j, j'$ arises because no component is treated differently from any other in our algorithm, so symmetry implies they can have no statistical differences.
 
-\subsection{Component distributions are uniform}
-\label{sec:prop-eqty-comp-dstr}
-
-\textbf{Result:}
-
-$$P(x^Y_j = g|Y) = P(x^Y_j = g'|Y) = \frac{1}{Z} \quad \forall g, g' \in G \quad \textrm{so} \quad P(X^Y|Y) = \prod\limits_{j=1}^N P(x^Y_j|Y) = \frac{1}{Z^N}$$
-
-This implies neither $P(x^Y_j = g|Y)$ nor $P(X^Y|Y)$ are a function of $Y$. Thus, if $Y \sim P(Y)$ we then also have
-
-$$P(x_j) = \sum\limits_Y P(x^Y_j|Y)P(Y) = \frac{1}{Z} \quad \textrm{and} \quad P(X) = \sum\limits_Y P(X^Y|Y)P(Y) = \frac{1}{Z^N}.$$
-
-\textbf{Proof:}
+\subsection{Proof: Component distributions are uniform over c-states}
 
 $P(x^Y_j = g|Y) = P(x^Y_j = g'|Y)$ for $g \neq g'$ arises because all $g$ in our model are treated identically, so symmetry implies any functions of them can have no statistical differences. Since these must add to $1$ when summed over $g \in G$, and $|G| = Z$, we must also have $P(x^Y_j = g|Y) = 1/Z.$
 
-\subsection{Code statistics are invariant to sequence statistics}
+\subsection{Proof: Code statistics are invariant to sequence statistics}
 
-\textbf{Result:}
+This follows immediately from \ref{sec:prop-unif-comp-dstr}, since $P(x^Y_j|Y) = 1/Z$. Therefore the statistics of crossover codes do not depend on any aspect about the sequence being encoded. This distinguishes crossover, for instance, from representations that grow more or less crowded with the complexity of the sequence they represent.
 
-$$P(X^Y|Y) \textrm{ does not depend on any statistic (e.g. length, symbol repetitions, etc) of } Y.$$
+\subsection{Proof: Sequence information is i.i.d. across components}
 
-\textbf{Proof:}
+Since the components for one sequence $Y$ are i.i.d. (\ref{sec:prop-comp-iid}) Therefore, while the $x^Y_j$ and $x^{Y'}_j$ might be dependent (e.g. if $Y$ and $Y'$ are very similar; see below), there can be no dependencies between $x^Y_j$ and $x^{Y'}_{j'}$ for $j \neq j'$. Therefore $\{x^{Y_1}_j, ..., x^{Y_{N_Y}}_j\}$ is independent across $j$. Since $I_j$ is a function of $\{x^{Y_1}_j, ..., x^{Y_{N_Y}}_j\}$, $I_j$ is independent across $j$ also. Since no $j$ is treated specially in our algorithm, $I_j$ must also be identically distributed, so given $P(Y)$, $I_j$ is i.i.d.
 
-This follows from \ref{sec:prop-eqty-comp-dstr}, since $P(x^Y_j|Y) = 1/Z$. Therefore the statistics of crossover codes do not depend on any aspect about the sequence being encoded. This distinguishes crossover, for instance, from representations that grow more or less crowded with the complexity of the sequence they represent.
+\subsection{Code similarity derivations}
 
-\subsection{Information about sequence identity is evenly distributed across the code}
-\label{sec:perf-info-dstr}
+Since $x^Y_j$ are i.i.d. across $j$ (\ref{sec:prop-comp-iid}) it follows that $s(X^Y, X^{Y'}) \sim \frac{1}{N}\textrm{Bi}(N, q)$, where $\textrm{Bi}(N, q)$ is a binomial distribution with success probability $q = P(x^Y_j = x^{Y'}_j)$. Thus, $\textrm{E}[s(X^Y, X^{Y'})] = q$ and $\textrm{Var}[s(X^Y, X^{Y'})] = q(1-q)/N$, and it suffices to only compute $q$. For conciseness, we drop the $j$ and write $x \equiv x_j$ from now on.
 
-Given $B$, $\mu$, and a distribution over sequences $P_Y(Y)$ with entropy $H[Y]$, define the information $(I_j | B, \mu)$ in component $j$ as the mutual information between $Y$ and $x_j$, i.e.
-
-$$I_j | B, \mu \equiv MI[Y|x_j; B, \mu] = H[Y] - H[Y|x_j; B, \mu] = H[Y] - \sum_g H[Y|x_j = g; B, \mu] P_Y(x_j = g| B, \mu)$$
-
-\textbf{Result:}
-
-$$P(I_1, ..., I_N) = \prod_j P(I_j) \quad \textrm{and} \quad P(I_j) = P(I_{j'}) \quad \forall j, j'.$$
-
-In other words, each component contains independent and equal information about the sequence. (Note that this does not imply $I_j = I_{j'}$ for any given $B$ and $\mu$, since there are $B, \mu$ in which some $x_j$ are less informative about $Y$ than others, e.g. if some $x_j$ by chance has the same c-state for all $Y$.) This means that the code's robustness to random and targeted lesions are equivalent, depending only on how many components were damaged.
-
-\textbf{Proof:}
-
-This follows from \ref{sec:iid-comp}, since the components for one sequence $Y$ are i.i.d. Therefore, while the $x^Y_j$ and $x^{Y'}_j$ might be dependent (e.g. if $Y$ and $Y'$ are very similar; see below), there can be no dependencies between $x^Y_j$ and $x^{Y'}_{j'}$ for $j \neq j'$. Therefore $\{x^{Y_1}_j, ..., x^{Y_{N_Y}}_j\}$ is independent across $j$. Since $I_j$ is a function of $\{x^{Y_1}_j, ..., x^{Y_{N_Y}}_j\}$, $I_j$ is independent across $j$ also. Since no $j$ is treated specially in our algorithm, $I_j$ must also be identically distributed, so given $P(Y)$, $I_j$ is i.i.d.
-
-\subsection{Similarity between sequences}
-
-\textbf{Result:}
-
-
-
-Since $x^Y_j$ are i.i.d. across $j$ (\ref{sec:iid-comp}) it follows that $s(X^Y, X^{Y'}) \sim \frac{1}{N}\textrm{Bi}(N, q)$, where $\textrm{Bi}(N, q)$ is a binomial distribution with success probability $q = P(x^Y_j = x^{Y'}_j)$. Thus, $\textrm{E}[s(X^Y, X^{Y'})] = q$ and $\textrm{Var}[s(X^Y, X^{Y'})] = q(1-q)/N$, and it suffices to only compute $q$. For conciseness, we drop the $j$ and write $x \equiv x_j$ from now on.
-
-\textbf{Proof:}
-
-\textbf{Prelude:}
-
-We first define and compute a few useful quantities that will simplify the rest of our calculations.
+We define and compute a few useful quantities that will keep our calculations more precise.
 
 1. $P(x^Y \leftarrow y_t)$ is the probability that $x^Y$ was taken from the $t$-th element of $Y$, that is, $1/(t+1)^\gamma$ times the probability it was not overwritten between $t+1$ and $L$ (including occasions where it was overwritten by the same state). For notational convenience we call this $f^{\gamma,L}_t$. We then have:
 
@@ -193,46 +252,21 @@ When $\gamma = 1$ this reduces to $P(x^Y \leftarrow i|x^Y \not \leftarrow Y_{1:t
 
 We now calculate how similar a sequence code is to any symbol code, as well as to other sequence codes.
 
-\textbf{Similarity between symbol and sequence codes:}
+\subsubsection{Derivation: Similarity between symbol and sequence codes}
 
-If $y_t = i$ for $0 < t_1 < ... < t_{n^i}$, then
-
-$$P(x^Y = x^i) = \frac{1}{Z} + \sum\limits_{t \in (t_1, ..., t_{n^i})}\left(1 - \frac{1}{Z}\right)f^{\gamma,L}_t.$$
-
-For $\gamma = 1$:
-
-$$P(x^Y = x^i) = \frac{n}{L+1} + \frac{1}{Z}\frac{L+1-n}{L+1}$$
-
-which tends to $n/(L+1)$ for large $Z$.
-
-\textbf{Proof}:
-
-$$P(x^Y = x^i) = P(x^Y \leftarrow i)P(x^Y = x^i|x^Y \leftarrow i) + P(x^Y \not \leftarrow i)P(x^Y = x^i|x^Y \not \leftarrow i)$$
-
-$$= P(x^Y \leftarrow i) + P(x^Y \not \leftarrow i)\frac{1}{Z}$$
+$$P(x^Y = x^i) = P(x^Y \leftarrow i)P(x^Y = x^i|x^Y \leftarrow i) + P(x^Y \not \leftarrow i)P(x^Y = x^i|x^Y \not \leftarrow i)
+= P(x^Y \leftarrow i) + P(x^Y \not \leftarrow i)\frac{1}{Z}$$
 
 $$= \sum\limits_{t \in (t_1, ..., t_{n^i})}f^{\gamma,L}_t + \left(1 - \sum\limits_{t \in (t_1, ..., t_{n^i})}f^{\gamma,L}_t\right)\frac{1}{Z}
 = \sum\limits_{t \in (t_1, ..., t_{n^i})}\left(1 - \frac{1}{Z}\right)f^{\gamma,L}_t + \frac{1}{Z}$$
 
-\textbf{Similarity between codes for two sequences:}
+\subsubsection{Derivation: Similarity between codes for two sequences}
 
-Let $Y = (y_1, ..., y_L)$ and $Y' = (y'_1, .., y'_{L'})$ be two sequences. Suppose they share a starting subsequence of length $t$, i.e. $y_1 = y'_1, ..., y_t = y'_t$, but either $y_{t+1} \neq y'_{t+1}$, $t = L$, or $t = L'$. We write this condition as $Y_{1:t} = Y'_{1:t}$. Similarly, we refer to the second parts of the sequences (the subsequences in which they differ) as $Y_{t+1:L}$ and $Y'_{t+1:L'}$, respectively. 
-
-Let $u^i$ index the times $i$ appears in $Y_{1:t}$, $v^i$ the times $i$ appears in $Y_{t+1:L}$, and $(v')^i$ the times $i$ appears in $Y'_{t+1:L'}$. Let $n^i_u$ count how many times $i$ appears in $Y_{1:t}$, $n^i_v$ the number of times $i$ appears in $Y_{t+1:L}$, and $n^i_{v'}$ the number of times $i$ appears in $Y'_{t+1:L'}$. We also write these in vector format as $\mathbf{n}_u$, $\mathbf{n}_v$, and $\mathbf{n}_{v'}$, respectively, where each is a vector of length $M$.
-
-Note that we must deal specially with starting subsequences because sequence codes are constructed from beginning to end.
-
-Then we have:
-
-Wrong: Note that when $Y$ and $Y'$ do not start with the same subsequence (i.e. $t = 0$) this reduces to
-
-$$P(x^Y = x^{Y'}) = \frac{1}{(L+1)(L'+1)}\left[1 + \frac{L + L' + LL'}{Z} + \frac{Z-1}{Z}\mathbf{n}^T\mathbf{n}'\right]$$
-
-\textbf{Proof:}
+Let $u^i$ index the times $i$ appears in $Y_{1:t}$, $v^i$ the times $i$ appears in $Y_{t+1:L}$, and $(v')^i$ the times $i$ appears in $Y'_{t+1:L'}$. Let $n^i_u$ count how many times $i$ appears in $Y_{1:t}$, $n^i_v$ the number of times $i$ appears in $Y_{t+1:L}$, and $n^i_{v'}$ the number of times $i$ appears in $Y'_{t+1:L'}$. We also write these in vector format as $\mathbf{n}_u$, $\mathbf{n}_v$, and $\mathbf{n}_{v'}$, respectively.
 
 Since $Y_{1:t} = Y'_{1:t}$,  first note that $X^{Y_{1:t}} = X^{Y'_{1:t}}$, so $x^{Y_{1:t}} = x^{Y'_{1:t}}$. We wish to find $P(x^Y = x^{Y'})$.
 
-The event $x^Y = x^{Y'}$ can occur in 4 distinct ways, whose probabilities sum to $P(x^Y = x^{Y'})$. At present we work under the assumption that all symbol codes are different and that $Y \neq Y' \implies X^{Y} \neq X^{Y'}.$
+The event $x^Y = x^{Y'}$ can occur in 4 distinct ways, whose probabilities sum to $P(x^Y = x^{Y'})$. At present we assume a negligible chance two sequence or symbol codes are exactly identical.
 
 \textbf{Case 1}: $(x^Y \leftarrow Y_{1:t}) \land (x^{Y'} \leftarrow Y'_{1:t})$, i.e. neither $x$ is overwritten at $t+1$ or later. These events are independent, so
 
@@ -246,7 +280,7 @@ $$P(\textrm{Case 1}) = \frac{t+1}{L+1}\frac{t+1}{L'+1}$$.
 
 $$P(\textrm{Case 2}) = P(x^Y \not\leftarrow Y_{1:t})P(x^{Y'} \not\leftarrow Y'_{1:t})P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})$$
 
-$$= [1 - (t+1)^\gamma f^{\gamma,L}_t][1 - (t+1)^\gamma f^{\gamma,L'}_t]P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})
+$$= [1 - (t+1)^\gamma f^{\gamma,L}_t][1 - (t+1)^\gamma f^{\gamma,L'}_t]P(x^Y = x^{Y'}|x^Y, x^{Y'} \not\leftarrow Y_{1:t})$$
 
 where we recall that $Y_{1:t} = Y'_{1:t}$. When $\gamma = 1$ this simplifies to
 
@@ -351,7 +385,7 @@ $$P(\textrm{Case 4}) = \frac{L'-t}{L+1}\frac{t+1}{L'+1}\left[
 \frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} + \left(1 - \frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} \right)\frac{1}{Z}
 \right].$$
 
-\textbf{Sum over all cases}
+\textbf{Sum over cases}
 
 $$P(x^Y = x^{Y'}) = P(\textrm{Case 1}) + P(\textrm{Case 2}) + P(\textrm{Case 3}) + P(\textrm{Case 4}) = $$
 
@@ -375,64 +409,22 @@ $$+[1 - (t+1)^\gamma f^{\gamma,L}_t](t+1)^\gamma f^{\gamma,L'}_t \times \left[
 \right]
 $$
 
-When $\gamma = 1$, then $P(x^Y = x^{Y'}) = $
+When $\gamma = 1$ this simplifies to
 
-$$\frac{t+1}{L+1}\frac{t+1}{L'+1}
+$$P(x^Y = x^{Y'}) =  \frac{t+1}{L+1}\frac{t+1}{L'+1}$$
+
+$$
 + \frac{L-t}{L+1}\frac{L'-t}{L'+1}\left[\frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_v\mathbf{n}_{v'}}{(L-t)(L'-t)} \right)\frac{1}{Z}\right]
 $$
 
 $$+\frac{t+1}{L+1}\frac{L'-t}{L'+1}\left[
-\frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} + \left(1 - \frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} \right)\frac{1}{Z}
-\right]
+\frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)}+ \left(1 - \frac{\mathbf{n}^T_{u}\mathbf{n}_{v'}}{(t+1)(L'-t)} \right)\frac{1}{Z}
+\right]$$
 $$
-
-$$+\frac{L'-t}{L+1}\frac{t+1}{L'+1}\left[
++\frac{L'-t}{L+1}\frac{t+1}{L'+1}\left[
 \frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} + \left(1 - \frac{\mathbf{n}^T_{v}\mathbf{n}_{u}}{(L-t)(t+1)} \right)\frac{1}{Z}
-\right]
+\right].
 $$
 
-\textbf{OLD STARTS HERE}
-
-This means that when $Y'$ is a starting subsequence of $Y$, i.e. $Y = (y'_1, ..., y'_t, y_{t+1}, ..., y_L)$ then the two sequences' expected similarity is equal to
-
-$$P(x^{Y'} = x^Y) = \frac{1}{(L+1)(t+1)}\left((t+1)^2 + \frac{Z-1}{Z}\mathbf{n}^T_{1:t}\mathbf{n}_{t+1:L} + \frac{(t+1)(L-t)}{Z}\right).$$
-
-\section{Comparison to existing hyperdimensional computing codes}
-
-
-
-
-\bibliographystyle{unsrt}  
-%\bibliography{references}  %%% Remove comment to use the external .bib file (using bibtex).
-%%% and comment out the ``thebibliography'' section.
-
-
-%%% Comment out this section when you \bibliography{references} is enabled.
-\begin{thebibliography}{1}
-
-\bibitem{kour2014real}
-George Kour and Raid Saabne.
-\newblock Real-time segmentation of on-line handwritten arabic script.
-\newblock In {\em Frontiers in Handwriting Recognition (ICFHR), 2014 14th
-  International Conference on}, pages 417--422. IEEE, 2014.
-
-\bibitem{kour2014fast}
-George Kour and Raid Saabne.
-\newblock Fast classification of handwritten on-line arabic characters.
-\newblock In {\em Soft Computing and Pattern Recognition (SoCPaR), 2014 6th
-  International Conference of}, pages 312--318. IEEE, 2014.
-
-\bibitem{hadash2018estimate}
-Guy Hadash, Einat Kermany, Boaz Carmeli, Ofer Lavi, George Kour, and Alon
-  Jacovi.
-\newblock Estimate and replace: A novel approach to integrating deep neural
-  networks with existing applications.
-\newblock {\em arXiv preprint arXiv:1804.09028}, 2018.
-
-\end{thebibliography}
-
-\section{Appendix}
-
-Blah blah
 
 \end{document}
