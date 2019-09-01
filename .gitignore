@@ -8,7 +8,7 @@
 !*.bib
 !*.gitignore
 !*.svg
-!tex
+!ms
 !figs
 
 sandbox.ipynb
