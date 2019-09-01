@@ -9,7 +9,7 @@
 !*.gitignore
 !*.svg
 !tex
-!diagrams
+!figs
 
 sandbox.ipynb
 
