@@ -3,6 +3,8 @@
 
 \usepackage{arxiv}
 \usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -14,7 +16,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
 
-\title{A hyperdimensional sequence code inspired by chromosomal crossover}
+\title{A hyperdimensional code for sequences and trees inspired by chromosomal crossover}
 
 \author{
   Rich ~Pang\thanks{https://rkp.science} \\
@@ -44,27 +46,42 @@ One approach to solving this has been to assume representations are built from h
 
 
 
-\section{Algorithm}
+\section{Problem statement}
 
 Consider a system $X$ of $N$ components $x_1, ..., x_N$, each of which can take any of $Z$ states. That is, $x_j \in G$ where $|G| = Z$. Label the states of $G$ as $1,...,Z$ for conciseness. Let $d(X^A, X^B)$ be the Hamming distance between $X^A$ and $X^B$, scaled to range from 0 and 1, and their similarity $s(X^A, X^B) \equiv 1 - d(X^A, X^B)$.
 
 We wish to establish a decodable mapping from arbitrary objects of cognition to system states, such that objects that are intuitively similar to us map to codes with high similarities. We shall start by considering sequences of symbols then generalize to arbitrary finite nested sets (or equivalently k-ary trees) with symbols as elements (leaves).
 
-\subsection{Algorithm}
+\section{Sequence encoding}
 
-Given a dictionary $D$ of $M$ symbols $s^1, ..., s^M$, we will first sample a "C-basis" (crossover basis) $B$ and an auxiliary mask function $\mu$ from $P(B)$ and $P(\mu)$, respectively. Using $B$ and $\mu$, we will then deterministically build codes $\{X^Y\}$ of arbitrary sequences $\{Y = (y_1, ..., y_L)\}$, where $y_t \in D$.
+\textbf{Summary}
+
+Given a dictionary $D$ of $M$ symbols $s^1, ..., s^M$, we first sample a "C-basis" (crossover basis) $B$ and an auxiliary "mask function" $\mu$ from $P(B)$ and $P(\mu)$, respectively. Using $B$ and $\mu$, we will then deterministically build codes $\{X^Y\}$ of arbitrary sequences $\{Y = (y_1, ..., y_L)\}$, where $y_t \in D$.
 
 \textbf{Setup}
 
 1. Sample a C-basis $B \equiv (X^1, ..., X^M, X^*)$, where each $X^i$ (encoding symbol $s^i$) has components $x^i_j$ sampled uniformly and i.i.d. from $G$, and where $X^*$ is "start" code, also comprised of uniform, i.i.d. components from $G$.
 
-2. Sample a "mask function" $\mu \sim P(\mu)$, where $\mu:(X^A, X^B) \rightarrow [0, 1]^N$ and is represented by a matrix with $N$ rows and $Z^{2N}$ columns, with i.i.d. real-valued elements from $\textrm{Uniform}(0, 1)$. We reference elements of $\mu$ with the notation $\mu(j, X^A, X^B)$.
+2. Sample a "mask function" $\mu \sim P(\mu)$, where $\mu:(X^A, X^B) \rightarrow [0, 1]^N$ and is represented by a matrix with $N$ rows and $Z^{2N}$ columns, with i.i.d. real-valued elements from $\textrm{Uniform}(0, 1)$. We reference elements of $\mu$ with the notation $\mu(j, X^A, X^B)$. (In practice $\mu$ need not be sampled explicitly, which would take astronomical time; it suffices to use, say, to map $(X^A, X^B)$ using a hash function like SHA-1 to an integer, then sample $N$ times from $\textrm{Uniform}(0, 1)$ from a random number generator seeded with this integer.)
 
-In practice $\mu$ need not be sampled explicitly, which would take astronomical time; it suffices to use, say, to map $(X^A, X^B)$ using a hash function like SHA-1 to an integer, then sample $N$ times from $\textrm{Uniform}(0, 1)$ from a random number generator seeded with this integer.
+\begin{algorithm}
+\caption{Sequence Encoding}
 
-\textbf{Encoding}
+\begin{algorithmic}[0]
+\Function{EncodeSequence}{$Y; B, \mu$}
+\State $X^Y \gets X^*$
+\For{$t \in 1, ..., |Y|$}
 
-...
+
+\State $X^Y[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma] \gets X^{y_t}[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma]$
+
+\EndFor
+
+\State \textbf{return} $X^Y$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
 
 \section{Properties}
 
@@ -138,7 +155,105 @@ This means that when $Y'$ is a starting subsequence of $Y$, i.e. $Y' = Y_{1:t}$ 
 
 $$P(x^{Y'} = x^Y) = \frac{1}{(L+1)(t+1)}\left((t+1)^2 + \frac{Z-1}{Z}\mathbf{n}^T_{1:t}\mathbf{n}_{t+1:L} + \frac{(t+1)(L-t)}{Z}\right).$$
 
-\section{Comparison to existing hyperdimensional computing codes}
+\section{Sequence decoding}
+How to decode a sequence
+
+\begin{algorithm}
+\caption{Sequence Decoding}
+
+\begin{algorithmic}[0]
+\Function{DecodeSequence}{$X^Y; B, \mu$}
+\State $\hat{X}^Y \gets X^*$
+\State $d \gets \textrm{Hamming}(\hat{X}^Y , X^*)$
+\State $t = 1$
+
+\While{$d > 0$}
+
+\State $(i_{best}, \hat{X}^Y_{best}, d_{best}) \gets (Null, Null, 1)$
+
+    \For{$i \in 1, ..., M$}
+    
+        \State $\hat{X}^Y_{temp} \gets \hat{X}^Y $
+        \State $\hat{X}^Y_{temp}[\mu(:, \hat{X}^Y, X^i) < 1/(t+1)^\gamma] \gets X^i[\mu(:, \hat{X}^Y, X^i) < 1/(t+1)^\gamma]$
+        \State $d_{temp} \gets \textrm{Hamming}(X^Y, \hat{X}^Y_{temp})$
+        
+        \If{$d_{temp} < d_{best}$}
+            
+            \State $(i_{best}, \hat{X}^Y_{best}, d_{best}) \gets (i, \hat{X}^Y_{temp}, d_{temp})$
+            
+        \EndIf
+    \EndFor
+    
+    \If{$d_{best}\geq d$}
+    
+        \State \textbf{return} $y_1, ..., y_t$
+        
+    \Else
+    
+        \State $(y_t, \hat{X}^Y, d) \gets (i_{best}, \hat{X}^Y_{best}, d_{best})$
+        \State $t = t+1$
+        
+    \EndIf
+
+\EndWhile
+
+\State \textbf{return} $y_1, ..., y_t$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+
+\section{Improving decoding with $\gamma$}
+
+\section{Trees}
+
+\begin{algorithm}
+\caption{Tree Encoding}
+
+\begin{algorithmic}[0]
+\Function{EncodeTree}{$T; B, \mu$}
+
+\State $D^T \gets \{i: X^i \textrm{ \textbf{for} } i \in 1, ..., M\}$
+
+\For{$J \in T$}
+
+    \State $X^T \gets D^T[J_1]$
+    \For{$k \in 2, ..., |J|$}
+        \State $mask \gets k/|J| \leq \mu(:, J) \leq (k+1)/|J|$
+        \State $X^T[mask] \gets J_k[mask]$
+    \EndFor
+    
+    \State $D^T[J] \gets X^T$
+\EndFor
+
+\State \textbf{return} $D^T[T[end]]$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Tree Decoding}
+
+\begin{algorithmic}[0]
+\Function{DecodeTree}{$Y; B, \mu$}
+\State $X^Y \gets X^*$
+\For{$t \in 1, ..., \textrm{len}(Y)$}
+
+
+\State $X^Y[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma] \gets X^{y_t}[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma]$
+
+\EndFor
+
+\State \textbf{return} $X^Y$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+
+\section{Mask correlations}
+
+\section{Discussion}
 
 
 
