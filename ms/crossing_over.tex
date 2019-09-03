@@ -6,6 +6,8 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 
+\usepackage{graphicx}
+
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 \usepackage{hyperref}       % hyperlinks
@@ -40,7 +42,7 @@ I present a method for encoding structured information in fixed-length vectors. 
 
 
 \section{Introduction}
-A core problem in neuroscience and artificial intelligence is how to represent a complex event like a spoken sentence using relatively fixed dimensions. Ideally similar events should have similar representations, and when a new event occurs pre-existing representations shouldn't require substantial rearrangement to prevent confusion.
+A common problem in neuroscience and artificial intelligence is how complex events, like spoken sentences, should be represented in a system of relatively fixed dimension. Ideally similar events should have similar representations, and when a new event occurs pre-existing representations shouldn't require substantial rearrangement to prevent confusion.
 
 One approach to solving this has been to assume representations are built from high-dimensional (HD) random vectors \ref{}. Such approach is fundamentally motivated by the observation that independent HD random vectors are very close to orthogonal (and far apart under other distance metrics) with very high probability. Thus, if one considers a codebook where $M$ objects are assigned to $M$ independently sampled HD random vectors, the codes are very unlikely to be confused. 
 
@@ -72,8 +74,8 @@ Given a dictionary $D$ of $M$ symbols $s^1, ..., s^M$, we first sample a "C-basi
 \State $X^Y \gets X^*$
 \For{$t \in 1, ..., |Y|$}
 
-
-\State $X^Y[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma] \gets X^{y_t}[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma]$
+\State $mask \gets (\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma)$
+\State $X^Y[mask] \gets X^{y_t}[mask]$
 
 \EndFor
 
@@ -82,6 +84,12 @@ Given a dictionary $D$ of $M$ symbols $s^1, ..., s^M$, we first sample a "C-basi
 
 \end{algorithmic}
 \end{algorithm}
+
+ \begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/1_encoding.png}
+    \caption{Sequence encoding algorithm and properties.}
+ \end{figure}
 
 \section{Properties}
 
@@ -171,15 +179,16 @@ How to decode a sequence
 
 \State $(i_{best}, \hat{X}^Y_{best}, d_{best}) \gets (Null, Null, 1)$
 
-    \For{$i \in 1, ..., M$}
+    \For{$i_{temp} \in 1, ..., M$}
     
         \State $\hat{X}^Y_{temp} \gets \hat{X}^Y $
-        \State $\hat{X}^Y_{temp}[\mu(:, \hat{X}^Y, X^i) < 1/(t+1)^\gamma] \gets X^i[\mu(:, \hat{X}^Y, X^i) < 1/(t+1)^\gamma]$
+        \State $ mask \gets (\mu(:, \hat{X}^Y_{temp}, X^{i_{temp}}) < 1/(t+1)^\gamma)$
+        \State $\hat{X}^Y_{temp}[mask] \gets X^{i_{temp}}[mask]$
         \State $d_{temp} \gets \textrm{Hamming}(X^Y, \hat{X}^Y_{temp})$
         
         \If{$d_{temp} < d_{best}$}
             
-            \State $(i_{best}, \hat{X}^Y_{best}, d_{best}) \gets (i, \hat{X}^Y_{temp}, d_{temp})$
+            \State $(i_{best}, \hat{X}^Y_{best}, d_{best}) \gets (i_{temp}, \hat{X}^Y_{temp}, d_{temp})$
             
         \EndIf
     \EndFor
@@ -203,7 +212,19 @@ How to decode a sequence
 \end{algorithmic}
 \end{algorithm}
 
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/2_decoding.png}
+    \caption{Sequence decoding algorithm and properties.}
+ \end{figure}
+
 \section{Improving decoding with $\gamma$}
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/3_gamma.png}
+    \caption{Dependence of sequence codes on $\gamma$.}
+ \end{figure}
 
 \section{Trees}
 
@@ -217,41 +238,79 @@ How to decode a sequence
 
 \For{$J \in T$}
 
-    \State $X^T \gets D^T[J_1]$
+    \State $X^T \gets D^T[J^1]$
     \For{$k \in 2, ..., |J|$}
-        \State $mask \gets k/|J| \leq \mu(:, J) \leq (k+1)/|J|$
-        \State $X^T[mask] \gets J_k[mask]$
+        \State $mask \gets (k/|J| \leq \mu(:, J) \leq (k+1)/|J|)$
+        \State $X^T[mask] \gets D^T[J^k][mask]$
     \EndFor
     
     \State $D^T[J] \gets X^T$
 \EndFor
 
-\State \textbf{return} $D^T[T[end]]$
+\State \textbf{return} $D^T[T[\textrm{end}]]$
 \EndFunction
 
 \end{algorithmic}
 \end{algorithm}
 
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/4_trees.png}
+    \caption{Tree encoding algorithm and properties.}
+ \end{figure}
+
 \begin{algorithm}
 \caption{Tree Decoding}
 
 \begin{algorithmic}[0]
-\Function{DecodeTree}{$Y; B, \mu$}
-\State $X^Y \gets X^*$
-\For{$t \in 1, ..., \textrm{len}(Y)$}
+\Function{DecodeTree}{$X^T; B, \mu$}
+\State $D^T \gets \{i: X^i \textrm{ \textbf{if} } \textrm{Hamming}(X^T, X^i) < d_{exclude} \textrm{ \textbf{for} } i \in 1, ..., M\}$
+\State $T \gets ()$
 
+\State $d \gets 1$
+    
+\While{$d > 0$}
 
-\State $X^Y[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma] \gets X^{y_t}[\mu(:, X^Y, X^{y_t}) < 1/(t+1)^\gamma]$
+    \State $(J_{best}, \hat{X}^T_{best}, d_{best}) \gets (Null, Null, 1)$
+    
+    \For{$J_{temp} \in \{J\}$}
+        
+        \State $\hat{X}^T_{temp} \gets D^T[J^1]$
+        \For{$k \in 2, ..., |J_{temp}|$}
+            \State $mask \gets k/|J_{temp}| \leq \mu(:, J_{temp}) \leq (k+1)/|J_{temp}|$
+            \State $\hat{X}^T_{temp}[mask] \gets D^T[J^k_{temp}][mask]$
+        \EndFor
+        
+        \State $d_{temp} \gets \textrm{Hamming}(X^T, \hat{X}^T_{temp})$
+        
+        \If{$d_{temp} < d_{best}$}
+            \State $(J_{best}, \hat{X}^T_{best}, d_{best}) \gets (J_{temp}, \hat{X}^T_{temp}, d_{temp})$
+        \EndIf
+    \EndFor
+    
+    \If{$d_{best} \geq d$}
+        \State \textbf{return} $T[\textrm{end}]$
+        
+    \Else
+        \State $(D^T[J_{best}], d) \gets (\hat{X}^T_{best}, d_{best})$
+        \State $\textrm{Append}(T, J_{best})$
+    \EndIf
 
-\EndFor
+\EndWhile
 
-\State \textbf{return} $X^Y$
+\State \textbf{return} $T[\textrm{end}]$
 \EndFunction
 
 \end{algorithmic}
 \end{algorithm}
 
 \section{Mask correlations}
+
+\begin{figure}[!t]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/5_mask_corrs.png}
+    \caption{Robustness to encoding noise through mask correlations.}
+ \end{figure}
 
 \section{Discussion}
 
@@ -317,7 +376,7 @@ $P(x^Y_j = g|Y) = P(x^Y_j = g'|Y)$ for $g \neq g'$ arises because all $g$ in our
 
 \subsection{Proof: Code statistics are invariant to sequence statistics}
 
-This follows immediately from \ref{sec:prop-unif-comp-dstr}, since $P(x^Y_j|Y) = 1/Z$. Therefore the statistics of crossover codes do not depend on any aspect about the sequence being encoded. This distinguishes crossover, for instance, from representations that grow more or less crowded with the complexity of the sequence they represent.
+This follows from \ref{sec:prop-unif-comp-dstr}, since $P(x^Y_j|Y) = 1/Z$. Therefore the statistics of crossover codes do not depend on any aspect about the sequence being encoded. This distinguishes crossover, for instance, from representations that grow more or less crowded with the complexity of the sequence they represent.
 
 \subsection{Proof: Sequence information is i.i.d. across components}
 
