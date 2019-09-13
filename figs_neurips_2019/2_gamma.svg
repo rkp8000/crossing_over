@@ -2772,8 +2772,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.3333333"
-     inkscape:cx="221.625"
-     inkscape:cy="562.5"
+     inkscape:cx="247.5"
+     inkscape:cy="577.5"
      inkscape:document-units="in"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -2807,7 +2807,7 @@
      id="layer1"
      transform="translate(0,-332.36215)">
     <g
-       transform="matrix(0.40210263,0,0,0.40210263,361.28125,338.84132)"
+       transform="matrix(0.40210263,0,0,0.40210263,361.28125,339.77882)"
        id="figure_1-8">
       <g
          id="patch_1-89">
@@ -4133,7 +4133,7 @@
       </g>
     </g>
     <g
-       transform="matrix(0.3995949,0,0,0.3995949,235.96875,339.17465)"
+       transform="matrix(0.3995949,0,0,0.3995949,235.96875,339.54965)"
        id="figure_1-36">
       <g
          id="patch_1-7">
@@ -7871,5 +7871,29 @@
          x="128.34898"
          id="tspan4450"
          sodipodi:role="line">b</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="298.3125"
+       y="343.98715"
+       id="text5817"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5819"
+         x="298.3125"
+         y="343.98715"
+         style="font-size:7.5px">*CAFE</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5821"
+       y="343.98715"
+       x="418.3125"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       xml:space="preserve"><tspan
+         style="font-size:7.5px"
+         y="343.98715"
+         x="418.3125"
+         id="tspan5823"
+         sodipodi:role="line">*CICADA</tspan></text>
   </g>
 </svg>
